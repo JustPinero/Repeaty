@@ -118,4 +118,33 @@ describe('Dashboard', () => {
     });
     expect(screen.queryByLabelText(/active language|studying/i)).not.toBeInTheDocument();
   });
+
+  it('shows an alert with a Retry button when the dashboard query fails', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'profiles')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'network down' },
+              }),
+            }),
+          }),
+        };
+      if (table === 'user_languages') return mockUserLanguagesQuery([]);
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    render(<Dashboard />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/network down/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    // Header still rendered so user can sign out.
+    expect(screen.getByRole('button', { name: /sign out|log ?out/i })).toBeInTheDocument();
+    // Greeting/queue NOT rendered.
+    expect(screen.queryByRole('heading', { name: /Hi.*Ben/i })).not.toBeInTheDocument();
+  });
 });

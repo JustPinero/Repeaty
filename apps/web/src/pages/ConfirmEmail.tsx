@@ -2,39 +2,62 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
-type Status = 'idle' | 'verifying' | 'success' | 'error';
+type Status = 'verifying' | 'success' | 'error';
+
+const VERIFY_GRACE_MS = 1500;
 
 export default function ConfirmEmailPage() {
-  const [status, setStatus] = useState<Status>('idle');
+  const [status, setStatus] = useState<Status>('verifying');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
-    async function run() {
-      // Supabase Auth handles email-confirmation tokens client-side via
-      // detectSessionInUrl. After landing on /auth/confirm with the magic
-      // hash/query, the SDK consumes it and a SIGNED_IN event fires.
-      // We just check whether a session exists once the URL is processed.
-      setStatus('verifying');
-      const { data, error } = await supabase.auth.getUser();
+
+    function resolveSuccess() {
+      if (cancelled) return;
+      setStatus('success');
+      navigate('/app', { replace: true });
+    }
+
+    // 1. Check the cached session synchronously-ish (from localStorage).
+    void supabase.auth.getSession().then(({ data, error }) => {
       if (cancelled) return;
       if (error) {
         setStatus('error');
         setErrorMsg(error.message);
         return;
       }
-      if (data.user) {
-        setStatus('success');
-        navigate('/app', { replace: true });
-      } else {
-        setStatus('error');
-        setErrorMsg('No active session found. Try signing in.');
-      }
-    }
-    void run();
+      if (data.session) resolveSuccess();
+    });
+
+    // 2. Subscribe so URL-hash-driven sign-ins also resolve us. Supabase's
+    //    detectSessionInUrl runs on its own schedule; this is the
+    //    deterministic path.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
+      if (session?.user) resolveSuccess();
+    });
+
+    // 3. Grace-period timeout: if no session has materialized, surface an
+    //    actionable error rather than spinning forever.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      void supabase.auth.getSession().then(({ data }) => {
+        if (cancelled) return;
+        if (!data.session) {
+          setStatus('error');
+          setErrorMsg('No active session found. Try signing in.');
+        }
+      });
+    }, VERIFY_GRACE_MS);
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
+      window.clearTimeout(timer);
     };
   }, [navigate]);
 

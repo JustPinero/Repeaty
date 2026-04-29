@@ -12,9 +12,6 @@ FILE="${1:-${CLAUDE_TOOL_FILE_PATH:-}}"
 case "$FILE" in
   *.tsx|*.jsx)
     if command -v pnpm >/dev/null 2>&1 && [ -f "package.json" ] && grep -q "eslint" package.json 2>/dev/null; then
-      OUTPUT=$(pnpm exec eslint --rulesdir .eslintrc.a11y.cjs --no-eslintrc --rule "{}" \
-                 --plugin jsx-a11y --ext .tsx,.jsx "$FILE" 2>&1 || true)
-      # Use the project's actual eslint config — the line above is a fallback.
       OUTPUT=$(pnpm exec eslint "$FILE" 2>&1 || true)
       if echo "$OUTPUT" | grep -qE "(jsx-a11y|axe)" 2>/dev/null; then
         echo "⚠️  a11y lint flagged issues in $FILE — fix before commit:"

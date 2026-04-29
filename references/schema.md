@@ -195,6 +195,7 @@ Phase 1 migrations:
 - `0005_attempts.sql`
 - `0006_rls_policies.sql` — every RLS policy in one transaction
 - `0007_onboarding_rpc.sql` — `complete_onboarding(p_display_name, p_native_language_code, p_targets)` RPC (see § Auxiliary)
+- `0008_rls_check_helper.sql` — `_test_relrowsecurity(p_table)` test-only helper (service_role only) so the integration suite can assert RLS is enabled on every public table
 
 Convention for later phases:
 - `NNNN_defer_<feature>.sql` for `/defer` migrations

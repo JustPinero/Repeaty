@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 type Props = {
@@ -7,9 +8,19 @@ type Props = {
 
 export function Header({ displayName }: Props) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      // Server-side sign-out failed (network, revocation server, etc.) but the
+      // local session must still be cleared so RequireAuth gates the next view.
+      console.error('signOut server-side failed; clearing local session', error);
+      await supabase.auth.signOut({ scope: 'local' });
+    }
+    qc.removeQueries({ queryKey: ['auth-user'] });
+    qc.removeQueries({ queryKey: ['onboarding-status'] });
+    qc.removeQueries({ queryKey: ['dashboard'] });
     navigate('/login', { replace: true });
   }
 

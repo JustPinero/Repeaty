@@ -30,17 +30,11 @@ describe('schema shape', () => {
     expect(probe.error, `expected table ${table} to be reachable, got ${probe.error?.message}`).toBeNull();
   });
 
-  it('every user-owned table has RLS enabled', async () => {
-    // We query pg_class for each table by name via a service-role function.
-    // To avoid a custom RPC, we use service-role to query a small Postgres
-    // metadata view exposed by Supabase: pg_tables doesn't expose RLS state,
-    // but pg_class.relrowsecurity does. Supabase RLS bypass via service role
-    // means we can read pg_class directly by issuing SQL through `from('pg_class')`,
-    // but the public schema doesn't expose pg_class. Instead we infer RLS by
-    // verifying anon access is denied (covered by rls-isolation.test.ts) and
-    // assert here only the table exists. The RLS-enabled assertion is the
-    // anon-denial behavior in rls-isolation.test.ts.
-    expect(true).toBe(true);
+  it.each(expectedTables)('table %s has RLS enabled', async (table) => {
+    const service = getServiceClient();
+    const { data, error } = await service.rpc('_test_relrowsecurity', { p_table: table });
+    expect(error, `_test_relrowsecurity(${table}) errored: ${error?.message}`).toBeNull();
+    expect(data, `expected RLS enabled on ${table}`).toBe(true);
   });
 
   it('decks_owner_matches_source CHECK rejects an owned bundled deck', async () => {

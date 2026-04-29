@@ -19,7 +19,7 @@
 | Testing          | Vitest (unit/component), Playwright (E2E), Supabase local (migrations)  |
 | Lint             | ESLint with `jsx-a11y` + Playwright + axe-core for runtime a11y         |
 | Package manager  | pnpm (workspaces)                                                       |
-| Node / pnpm      | Node 22 / pnpm 10                                                       |
+| Node / pnpm      | Node 22 (CI) / Node 20+ (local) · pnpm pinned via `package.json#packageManager` (currently 9.15.9; bump in lockstep) |
 
 ## Monorepo layout
 

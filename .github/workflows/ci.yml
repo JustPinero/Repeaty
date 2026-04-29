@@ -44,7 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: validate
-    if: hashFiles('e2e-manifest.json') != ''
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -109,7 +108,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: validate
-    if: hashFiles('supabase/migrations/*.sql') != ''
     steps:
       - uses: actions/checkout@v6
       - uses: supabase/setup-cli@v2.0.0
@@ -122,9 +120,11 @@ jobs:
       - name: Capture Supabase env
         id: sb
         run: |
-          echo "SUPABASE_URL=$(supabase status -o env | awk -F= '/^API_URL=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
-          echo "SUPABASE_ANON_KEY=$(supabase status -o env | awk -F= '/^ANON_KEY=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          {
+            echo "SUPABASE_URL=$(supabase status -o env | awk -F= '/^API_URL=/{print $2}' | tr -d '"')"
+            echo "SUPABASE_ANON_KEY=$(supabase status -o env | awk -F= '/^ANON_KEY=/{print $2}' | tr -d '"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tr -d '"')"
+          } >> "$GITHUB_OUTPUT"
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}

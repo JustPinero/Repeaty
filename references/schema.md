@@ -91,11 +91,11 @@ FSRS state, one row per (user, card).
 | id               | UUID PK                           |                                                      |
 | user_id          | UUID FK auth.users                |                                                      |
 | card_id          | UUID FK cards                     |                                                      |
-| ease             | REAL NOT NULL                     | FSRS-derived                                         |
-| interval_days    | REAL NOT NULL                     |                                                      |
-| due_at           | TIMESTAMPTZ NOT NULL              |                                                      |
-| last_reviewed_at | TIMESTAMPTZ NULL                  |                                                      |
-| fsrs_state       | JSONB NOT NULL                    | opaque blob (parameters per FSRS algorithm spec)     |
+| ease             | REAL NOT NULL                     | denormalized from FSRS difficulty for legacy queries |
+| interval_days    | REAL NOT NULL                     | denormalized from `fsrs_state.scheduled_days`        |
+| due_at           | TIMESTAMPTZ NOT NULL              | denormalized from `fsrs_state.due` for indexed query |
+| last_reviewed_at | TIMESTAMPTZ NULL                  | denormalized from `fsrs_state.last_review`           |
+| fsrs_state       | JSONB NOT NULL                    | matches the `FsrsState` type in `@repeaty/shared/fsrs` (carries `v: 1` schema version + ts-fsrs scheduler fields). Authoritative — denormalized columns above are for query convenience. |
 | created_at       | TIMESTAMPTZ                       |                                                      |
 | updated_at       | TIMESTAMPTZ                       |                                                      |
 

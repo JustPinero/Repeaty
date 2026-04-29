@@ -163,6 +163,13 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | uuid                                 | ^11.0.3    | UUIDv5 deterministic deck/card IDs in the seed migration | (n/a)             | dev-only              |
 | @types/uuid                          | ^10.0.0    | Types for above                                  | (n/a)                       | dev-only              |
 
+### Installed in Request 2.2 (FSRS algorithm)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| ts-fsrs (in `@repeaty/shared`)       | ^4.7.1     | FSRS-4.5 scheduler engine wrapped by `@repeaty/shared/fsrs` | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 will pull it in) |
+| vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |

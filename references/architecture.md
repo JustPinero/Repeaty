@@ -147,11 +147,16 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | @hookform/resolvers                  | ^3.9.1     | Zod resolver for react-hook-form                 | (n/a)                       | ~1KB gz               |
 | @tanstack/react-query                | ^5.59.20   | Auth-state subscription + future server state    | SWR                         | ~12KB gz              |
 
+### Installed in Request 1.4 (onboarding wizard)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| zustand                              | ^5.0.1     | Wizard transient state with localStorage persist (browser-back continuity) | redux, jotai | ~1KB gz               |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |
 | ----------------------------- | ------------ | ------------------------------------------------------- |
-| zustand                       | 1.5          | Cross-component UI state (active language, wizard state) |
 | dexie                         | Phase 2      | IndexedDB wrapper for offline review queue               |
 | workbox-*                     | Phase 6      | Service worker for PWA offline                           |
 | shadcn/ui (CLI-installed)     | Phase 2      | Component primitives                                     |

@@ -1,5 +1,5 @@
-// RED-phase stub — does not actually call the RPC.
-// GREEN replaces with useMutation around supabase.rpc('complete_onboarding', ...).
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import type { TargetLanguage } from './useOnboardingState';
 
 export type CompleteOnboardingInput = {
@@ -15,11 +15,26 @@ export type UseCompleteOnboardingResult = {
 };
 
 export function useCompleteOnboarding(): UseCompleteOnboardingResult {
-  return {
-    mutateAsync: async () => {
-      throw new Error('useCompleteOnboarding stub — replaced in GREEN');
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (input: CompleteOnboardingInput) => {
+      const { error } = await supabase.rpc('complete_onboarding', {
+        p_display_name: input.displayName,
+        p_native_language_code: input.nativeLanguageCode,
+        p_targets: input.targets,
+      });
+      if (error) throw new Error(error.message);
     },
-    isPending: false,
-    error: null,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['onboarding-status'] });
+    },
+  });
+
+  return {
+    mutateAsync: async (input) => {
+      await mutation.mutateAsync(input);
+    },
+    isPending: mutation.isPending,
+    error: mutation.error,
   };
 }

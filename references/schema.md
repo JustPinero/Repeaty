@@ -135,6 +135,19 @@ FSRS state, one row per (user, card).
 **Indexes:** `idx_comp_user_card_created (user_id, card_id, created_at DESC)`.
 **RLS:** all ops `auth.uid() = user_id`.
 
+## RPCs
+
+### `complete_onboarding(p_display_name TEXT, p_native_language_code TEXT, p_targets JSONB) → VOID` (Phase 1, Request 1.4)
+Atomic write across `profiles` + `user_languages` so the onboarding wizard can never leave the user in a half-onboarded state. SECURITY INVOKER (RLS still applies; `auth.uid()` is asserted to be non-null inside the function).
+
+`p_targets` is a JSONB array of `{ "language_code": string, "cefr_level": "A1"|"A2"|"B1"|"B2"|"C1"|"C2" }` objects. Inserts use `ON CONFLICT (user_id, language_code) DO UPDATE` so re-running onboarding (e.g. to change CEFR level) is idempotent.
+
+Validation surfaces helpful Postgres error codes:
+- `42501` — not authenticated
+- `22023` — empty `display_name`, empty `native_language_code`, empty `targets` array, missing `language_code`, or invalid `cefr_level`
+
+`GRANT EXECUTE TO authenticated`.
+
 ## Auxiliary
 
 ### `feedback_cache` (Phase 5)

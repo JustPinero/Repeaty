@@ -13,7 +13,11 @@ describe('Step3TargetLanguage', () => {
   it('exposes all 7 target languages and all 6 CEFR levels', () => {
     render(<Step3TargetLanguage onSubmit={vi.fn()} onBack={vi.fn()} />);
     for (const code of ['es', 'fr', 'de', 'it', 'ru', 'ja', 'zh']) {
-      expect(screen.getByRole('option', { name: new RegExp(code, 'i') })).toBeInTheDocument();
+      // Match the trailing "(code)" parenthetical; loose code matches collide
+      // (e.g. /es/i would also match "Japan**ese**").
+      expect(
+        screen.getByRole('option', { name: new RegExp(`\\(${code}\\)`) }),
+      ).toBeInTheDocument();
     }
     for (const lvl of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
       expect(screen.getByRole('option', { name: new RegExp(`^${lvl}$`) })).toBeInTheDocument();

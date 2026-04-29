@@ -106,20 +106,45 @@ Feature code imports from `@/platform`, never from `@capacitor/*` or `navigator.
 
 ## Dependency log
 
-Every new dependency added after kickoff appends a row here with: package name, why we picked it, what we considered, what it costs (bundled bytes if client, monthly cost if external service).
+Every new dependency added after kickoff appends a row here with: package name, version, why we picked it, what we considered, what it costs (bundled bytes if client, monthly cost if external service).
 
-| Package           | Reason                                                                                  | Considered          | Cost                            |
-| ----------------- | --------------------------------------------------------------------------------------- | ------------------- | ------------------------------- |
-| react             | UI framework                                                                            | (n/a — kickoff)     | ~6KB gz                         |
-| vite              | Build + dev server                                                                      | Next.js (rejected)  | dev-only                        |
-| @supabase/supabase-js | Supabase client                                                                     | (n/a — kickoff)     | ~30KB gz                        |
-| zustand           | Cross-component UI state                                                                | Redux, Jotai        | ~1KB gz                         |
-| @tanstack/react-query | Server state                                                                        | SWR                 | ~12KB gz                        |
-| zod               | Runtime validation                                                                      | yup, valibot        | ~13KB gz                        |
-| dexie             | IndexedDB wrapper                                                                       | idb-keyval          | ~22KB gz                        |
-| workbox-*         | Service worker                                                                          | hand-rolled SW      | ~8KB gz (cached at install)     |
+### Installed in Request 1.1 (monorepo scaffold)
 
-(Phase 1.1 fills in concrete versions in `package.json`; this table tracks the *why*.)
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| react                                | ^18.3.1    | UI framework                                     | (n/a — kickoff)             | ~6KB gz               |
+| react-dom                            | ^18.3.1    | DOM renderer                                     | (n/a)                       | ~40KB gz              |
+| zod                                  | ^3.23.8    | Runtime validation (env, API, LLM responses)     | yup, valibot                | ~13KB gz              |
+| vite                                 | ^5.4.10    | Build + dev server                               | Next.js (rejected per ADR-001) | dev-only           |
+| @vitejs/plugin-react                 | ^4.3.3     | React plugin for Vite                            | swc plugin                  | dev-only              |
+| typescript                           | ^5.6.3     | Language                                         | (n/a)                       | dev-only              |
+| tailwindcss                          | ^3.4.14    | Styling                                          | vanilla CSS, CSS modules    | dev-only (purged)     |
+| postcss + autoprefixer               | ^8.4.49 / ^10.4.20 | Tailwind toolchain                       | (n/a)                       | dev-only              |
+| eslint                               | ^8.57.1    | Lint (v8 to keep jsx-a11y plugin chain stable)   | eslint v9 flat config       | dev-only              |
+| eslint-plugin-jsx-a11y               | ^6.10.2    | A11y enforcement (CI-blocking per coding-standards) | (n/a)                    | dev-only              |
+| eslint-plugin-react / -react-hooks   | ^7.37.2 / ^5.0.0 | Standard React lint                        | (n/a)                       | dev-only              |
+| eslint-plugin-react-refresh          | ^0.4.14    | Fast Refresh hygiene                             | (n/a)                       | dev-only              |
+| @typescript-eslint/parser + plugin   | ^7.18.0    | TS-aware ESLint                                  | (n/a)                       | dev-only              |
+| @types/eslint                        | ^8.56.12   | Type-check the eslint-config test                | (n/a)                       | dev-only              |
+| vitest                               | ^2.1.4     | Unit/component test runner                       | jest                        | dev-only              |
+| jsdom                                | ^25.0.1    | DOM env for vitest                               | happy-dom                   | dev-only              |
+| @testing-library/react / -jest-dom / -user-event | ^16.0.1 / ^6.6.3 / ^14.5.2 | Component testing               | (n/a)                       | dev-only              |
+| @playwright/test                     | ^1.48.2    | E2E (config skeleton; specs land in 1.3+)        | cypress                     | dev-only              |
+| prettier                             | ^3.3.3     | Formatter (single source of truth)               | dprint                      | dev-only              |
+
+### Pending (added in later requests)
+
+| Package                       | Planned in   | Reason                                                  |
+| ----------------------------- | ------------ | ------------------------------------------------------- |
+| @supabase/supabase-js         | 1.3          | Supabase client (auth + RLS-respecting reads)            |
+| react-router-dom              | 1.3          | Client-side routing                                      |
+| react-hook-form               | 1.3          | Forms with Zod-validated submission                      |
+| @hookform/resolvers           | 1.3          | Zod resolver for react-hook-form                         |
+| zustand                       | 1.5          | Cross-component UI state (active language, wizard state) |
+| @tanstack/react-query         | 1.5          | Server-state caching                                     |
+| dexie                         | Phase 2      | IndexedDB wrapper for offline review queue               |
+| workbox-*                     | Phase 6      | Service worker for PWA offline                           |
+| shadcn/ui (CLI-installed)     | Phase 2      | Component primitives                                     |
 
 ## Phases (live build plan)
 

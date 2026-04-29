@@ -1,10 +1,23 @@
-// RED-phase stub — does not actually validate.
-// GREEN phase replaces with a Zod schema that throws on missing required vars.
-export type Env = {
-  VITE_SUPABASE_URL: string;
-  VITE_SUPABASE_ANON_KEY: string;
-};
+import { z } from 'zod';
 
-export function loadEnv(_input: Record<string, unknown>): Env {
-  return { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' };
+const envSchema = z.object({
+  VITE_SUPABASE_URL: z
+    .string({ required_error: 'VITE_SUPABASE_URL is required' })
+    .url('VITE_SUPABASE_URL must be a valid URL'),
+  VITE_SUPABASE_ANON_KEY: z
+    .string({ required_error: 'VITE_SUPABASE_ANON_KEY is required' })
+    .min(1, 'VITE_SUPABASE_ANON_KEY is required'),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+export function loadEnv(input: Record<string, unknown>): Env {
+  const parsed = envSchema.safeParse(input);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((i) => `${i.path.join('.') || 'env'}: ${i.message}`)
+      .join('; ');
+    throw new Error(`Invalid environment: ${issues}`);
+  }
+  return parsed.data;
 }

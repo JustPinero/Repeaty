@@ -44,9 +44,9 @@ describe('DeckListItem', () => {
     expect(tag).toHaveTextContent(/starter|bundled/i);
   });
 
-  it('links to the deck detail route /app/decks/:id', () => {
+  it('links to the review session for the deck (/app/decks/:id/review)', () => {
     renderItem({ id: 'abc-123' });
     const link = screen.getByRole('link', { name: /Spanish — Starter/ });
-    expect(link).toHaveAttribute('href', '/app/decks/abc-123');
+    expect(link).toHaveAttribute('href', '/app/decks/abc-123/review');
   });
 });

@@ -11,6 +11,21 @@ vi.mock('./useReviewSession', () => ({
   useReviewSession: (deckId: string) => useReviewSessionMock(deckId),
 }));
 
+// The page imports Flashcard via @/features/decks (barrel), which transitively
+// loads @/lib/supabase → loadEnv. Stub the supabase module so the env-validator
+// doesn't fire in jsdom.
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(),
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      onAuthStateChange: vi
+        .fn()
+        .mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+    },
+  },
+}));
+
 import ReviewSessionPage from './ReviewSessionPage';
 
 function renderAt(path: string) {

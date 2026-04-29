@@ -20,7 +20,7 @@ export function DeckListItem({ id, name, languageCode, cefrLevel, cardCount, sou
   return (
     <li data-testid="deck-list-item">
       <Link
-        to={`/app/decks/${id}`}
+        to={`/app/decks/${id}/review`}
         className="block hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peaty-green focus-visible:ring-offset-2 rounded-xl"
       >
         <Card className="hover:bg-stone-50 transition-colors">

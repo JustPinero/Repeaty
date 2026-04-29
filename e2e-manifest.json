@@ -3,7 +3,7 @@
   "flows": {
     "signup-and-onboarding": {
       "phase": 1,
-      "status": "not-started",
+      "status": "in-progress",
       "spec": "apps/web/tests/e2e/signup-and-onboarding.spec.ts"
     },
     "flashcard-review-session": {

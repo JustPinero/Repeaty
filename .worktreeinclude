@@ -1,0 +1,6 @@
+# Files that should be copied into git worktrees so isolated agent runs can build/test.
+# Listed paths are relative to the repo root. Lines starting with # are comments.
+
+.env.local
+apps/web/.env.local
+supabase/.env

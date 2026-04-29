@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, "phase-*"]
+
+# Action versions verified April 2026. Use /ci-update to refresh.
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+
+jobs:
+  # ─── Always-run checks (every PR, every phase) ──────────────────────────────
+  validate:
+    name: lint • types • unit (validate.sh)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        # Skip cleanly while package.json doesn't exist yet (pre-Phase-1.1)
+        run: |
+          if [ -f "package.json" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "package.json not yet present — skipping install (Phase 1.1)"
+          fi
+      - name: Run validate.sh (single source of truth)
+        run: bash scripts/validate.sh
+
+  # ─── Conditional E2E (only flows marked complete in e2e-manifest.json) ──────
+  e2e:
+    name: e2e (applicable flows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate
+    if: hashFiles('e2e-manifest.json') != ''
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Determine complete E2E flows
+        id: flows
+        run: |
+          if [ -f "e2e-manifest.json" ]; then
+            FLOWS=$(jq -r '.flows | to_entries[] | select(.value.status == "complete") | .key' e2e-manifest.json | tr '\n' ' ')
+            echo "flows=$FLOWS" >> "$GITHUB_OUTPUT"
+            if [ -z "$FLOWS" ]; then
+              echo "no E2E flows marked 'complete' — skipping"
+            fi
+          fi
+      - name: Install dependencies
+        if: steps.flows.outputs.flows != ''
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        if: steps.flows.outputs.flows != ''
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run E2E for completed flows
+        if: steps.flows.outputs.flows != ''
+        run: |
+          for flow in ${{ steps.flows.outputs.flows }}; do
+            echo "→ E2E: $flow"
+            pnpm test:e2e --grep "$flow"
+          done
+
+  # ─── Full suite + build verify (main only) ──────────────────────────────────
+  build:
+    name: production build (main only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Build
+        run: |
+          if [ -f "package.json" ] && grep -q '"build"' package.json; then
+            pnpm install --frozen-lockfile
+            pnpm build
+          else
+            echo "package.json not yet present — skipping build (Phase 1.1)"
+          fi
+
+  # ─── Supabase migrations sanity-check (when present) ────────────────────────
+  supabase-migrations:
+    name: supabase migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+    if: hashFiles('supabase/migrations/*.sql') != ''
+    steps:
+      - uses: actions/checkout@v6
+      - uses: supabase/setup-cli@v2
+        with:
+          version: latest
+      - name: Start local Supabase
+        run: supabase start
+      - name: Apply migrations
+        run: supabase db reset --no-seed

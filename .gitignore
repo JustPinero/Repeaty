@@ -1,0 +1,51 @@
+# Deps
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.vite/
+.turbo/
+.next/
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test / coverage
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Claude Code session state (ephemeral)
+.claude/handoff.md
+
+# Misc
+.cache/
+*.pem

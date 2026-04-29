@@ -1,0 +1,35 @@
+{
+  "$comment": "Tracks which user flows are testable. CI reads this to decide which E2E tests run. Status: not-started | in-progress | complete. Update when a flow ships in a phase.",
+  "flows": {
+    "signup-and-onboarding": {
+      "phase": 1,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/signup-and-onboarding.spec.ts"
+    },
+    "flashcard-review-session": {
+      "phase": 2,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/flashcard-review-session.spec.ts"
+    },
+    "comprehension-session": {
+      "phase": 3,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/comprehension-session.spec.ts"
+    },
+    "pronunciation-session": {
+      "phase": 4,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/pronunciation-session.spec.ts"
+    },
+    "ai-deck-generation-pro": {
+      "phase": 5,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/ai-deck-generation-pro.spec.ts"
+    },
+    "pwa-install-and-offline": {
+      "phase": 6,
+      "status": "not-started",
+      "spec": "apps/web/tests/e2e/pwa-install-and-offline.spec.ts"
+    }
+  }
+}

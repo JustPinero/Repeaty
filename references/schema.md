@@ -1,0 +1,179 @@
+# Schema — Repeaty
+
+Source of truth for the database. Authoritative SQL lives in `supabase/migrations/`. This doc explains intent and RLS policies; `drift-audit` keeps it in sync.
+
+## Conventions
+
+- All primary keys are `UUID` (`gen_random_uuid()`).
+- All timestamps are `TIMESTAMPTZ NOT NULL DEFAULT now()`.
+- All user-owned tables have `user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE`.
+- Soft deletes use `deleted_at TIMESTAMPTZ NULL`. RLS read policies filter `deleted_at IS NULL`.
+- Every table has RLS **enabled**. Tables without explicit policies are locked to all access — that's the point.
+
+## Tables
+
+### `profiles`
+Extends `auth.users`. One row per user, created by trigger on `auth.users` insert.
+
+| Column                 | Type                              | Notes                                                       |
+| ---------------------- | --------------------------------- | ----------------------------------------------------------- |
+| id                     | UUID PK, FK auth.users(id)        | Same as auth user id                                        |
+| display_name           | TEXT NOT NULL                     | Set during onboarding                                       |
+| email                  | TEXT NOT NULL                     | Mirror of auth.users.email; updated by trigger              |
+| native_language_code   | TEXT NOT NULL                     | BCP-47 (e.g. `en-US`, `es-ES`); set during onboarding       |
+| tier                   | TEXT NOT NULL DEFAULT 'free'      | enum-like: `free` \| `pro` \| `admin` (CHECK constraint)    |
+| is_admin               | BOOLEAN NOT NULL DEFAULT false    | Gates `/admin` route; orthogonal to `tier`                  |
+| created_at             | TIMESTAMPTZ                       |                                                             |
+| updated_at             | TIMESTAMPTZ                       | Trigger-maintained                                          |
+
+**RLS:**
+- `SELECT`: `auth.uid() = id`
+- `UPDATE`: `auth.uid() = id` AND only on a small allowlist of columns (`display_name`, `native_language_code`). `tier` and `is_admin` are mutated only by service-role (i.e. `/admin` flips via Edge Function or admin SQL).
+
+### `user_languages`
+A user can study multiple languages, each at its own CEFR level.
+
+| Column           | Type           | Notes                                            |
+| ---------------- | -------------- | ------------------------------------------------ |
+| user_id          | UUID, FK       | composite PK with `language_code`                |
+| language_code    | TEXT           | BCP-47                                           |
+| cefr_level       | TEXT NOT NULL  | CHECK in (`A1`,`A2`,`B1`,`B2`,`C1`,`C2`)         |
+| created_at       | TIMESTAMPTZ    |                                                  |
+| updated_at       | TIMESTAMPTZ    |                                                  |
+
+**RLS:** `SELECT`/`INSERT`/`UPDATE`/`DELETE` all `auth.uid() = user_id`.
+
+### `decks`
+Bundled (built into the app) or owned (AI-generated, imported).
+
+| Column         | Type                              | Notes                                                       |
+| -------------- | --------------------------------- | ----------------------------------------------------------- |
+| id             | UUID PK                           |                                                             |
+| name           | TEXT NOT NULL                     |                                                             |
+| language_code  | TEXT NOT NULL                     | target language                                             |
+| cefr_level     | TEXT NOT NULL                     | `A1`..`C2`                                                  |
+| source         | TEXT NOT NULL                     | enum: `bundled` \| `ai_generated` \| `imported`             |
+| owner_id       | UUID NULL, FK auth.users(id)      | NULL when source = `bundled`                                |
+| created_at     | TIMESTAMPTZ                       |                                                             |
+| deleted_at     | TIMESTAMPTZ NULL                  | soft delete                                                 |
+
+**RLS:**
+- `SELECT`: `(source = 'bundled' AND deleted_at IS NULL) OR (owner_id = auth.uid() AND deleted_at IS NULL)`
+- `INSERT`: only with `owner_id = auth.uid()`. Service-role bypasses for bundled deck seeding.
+- `UPDATE`/`DELETE`: `owner_id = auth.uid()`.
+
+### `cards`
+
+| Column                    | Type           | Notes                                              |
+| ------------------------- | -------------- | -------------------------------------------------- |
+| id                        | UUID PK        |                                                    |
+| deck_id                   | UUID FK decks  | ON DELETE CASCADE                                  |
+| target_text               | TEXT NOT NULL  | the word/phrase in the language being learned      |
+| native_text               | TEXT NOT NULL  | translation in user's native language              |
+| ipa                       | TEXT NULL      | phonetic, optional                                 |
+| example_sentence_target   | TEXT NULL      |                                                    |
+| example_sentence_native   | TEXT NULL      |                                                    |
+| language_code             | TEXT NOT NULL  | denormalized from deck for query-path indexing     |
+| created_at                | TIMESTAMPTZ    |                                                    |
+
+**RLS:** inherited via deck — `SELECT` allowed when the deck is visible (bundled OR owned by user).
+**Indexes:** `idx_cards_deck_id (deck_id)`, `idx_cards_language (language_code)`.
+
+### `reviews`
+FSRS state, one row per (user, card).
+
+| Column           | Type                              | Notes                                                |
+| ---------------- | --------------------------------- | ---------------------------------------------------- |
+| id               | UUID PK                           |                                                      |
+| user_id          | UUID FK auth.users                |                                                      |
+| card_id          | UUID FK cards                     |                                                      |
+| ease             | REAL NOT NULL                     | FSRS-derived                                         |
+| interval_days    | REAL NOT NULL                     |                                                      |
+| due_at           | TIMESTAMPTZ NOT NULL              |                                                      |
+| last_reviewed_at | TIMESTAMPTZ NULL                  |                                                      |
+| fsrs_state       | JSONB NOT NULL                    | opaque blob (parameters per FSRS algorithm spec)     |
+| created_at       | TIMESTAMPTZ                       |                                                      |
+| updated_at       | TIMESTAMPTZ                       |                                                      |
+
+**Constraints:** `UNIQUE (user_id, card_id)`.
+**Indexes:** `idx_reviews_user_due (user_id, due_at)` for the daily-queue query.
+**RLS:** all ops `auth.uid() = user_id`.
+
+### `pronunciation_attempts`
+
+| Column            | Type                              | Notes                                                |
+| ----------------- | --------------------------------- | ---------------------------------------------------- |
+| id                | UUID PK                           |                                                      |
+| user_id           | UUID FK auth.users                |                                                      |
+| card_id           | UUID FK cards                     |                                                      |
+| audio_storage_path| TEXT NOT NULL                     | path in Supabase Storage bucket `pronunciation-audio` |
+| whisper_transcript| TEXT NOT NULL                     |                                                      |
+| similarity_score  | REAL NOT NULL                     | 0.0–1.0 normalized Levenshtein for v1                |
+| feedback_text     | TEXT NULL                         | populated only for Pro tier                          |
+| created_at        | TIMESTAMPTZ                       |                                                      |
+
+**Indexes:** `idx_pron_user_card_created (user_id, card_id, created_at DESC)` for history view.
+**RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy: `user_id/...`.
+**Storage retention:** Cron job deletes audio files older than 7 days for free-tier users (kept indefinitely for Pro). `audio_storage_path` is set to NULL when the file is reaped, but the row stays for history.
+
+### `comprehension_attempts`
+
+| Column         | Type                              | Notes                                                |
+| -------------- | --------------------------------- | ---------------------------------------------------- |
+| id             | UUID PK                           |                                                      |
+| user_id        | UUID FK auth.users                |                                                      |
+| card_id        | UUID FK cards                     |                                                      |
+| response_ms    | INTEGER NOT NULL                  | response latency in milliseconds                     |
+| correct        | BOOLEAN NOT NULL                  |                                                      |
+| feedback_text  | TEXT NULL                         | Pro-only                                             |
+| created_at     | TIMESTAMPTZ                       |                                                      |
+
+**Indexes:** `idx_comp_user_card_created (user_id, card_id, created_at DESC)`.
+**RLS:** all ops `auth.uid() = user_id`.
+
+## Auxiliary
+
+### `feedback_cache` (Phase 5)
+Caches AI-generated feedback by error pattern to avoid redundant Claude calls.
+
+| Column         | Type                              | Notes                                                |
+| -------------- | --------------------------------- | ---------------------------------------------------- |
+| id             | UUID PK                           |                                                      |
+| card_id        | UUID FK cards                     |                                                      |
+| error_pattern  | TEXT NOT NULL                     | normalized pattern key (e.g. transcript-vs-target diff hash) |
+| native_language_code | TEXT NOT NULL              | feedback is locale-dependent                         |
+| feedback_text  | TEXT NOT NULL                     |                                                      |
+| created_at     | TIMESTAMPTZ                       |                                                      |
+
+**Constraints:** `UNIQUE (card_id, error_pattern, native_language_code)`.
+**RLS:** read-only public; writes via service-role only.
+
+### `rate_limits` (Phase 5)
+Per-user daily counters for paid-tier features.
+
+| Column         | Type                              | Notes                                                |
+| -------------- | --------------------------------- | ---------------------------------------------------- |
+| user_id        | UUID FK auth.users                | composite PK with `bucket` + `day`                   |
+| bucket         | TEXT NOT NULL                     | enum: `lesson_generation` \| `feedback_generation`   |
+| day            | DATE NOT NULL                     | UTC date                                             |
+| count          | INTEGER NOT NULL DEFAULT 0        |                                                      |
+
+**RLS:** `SELECT` `auth.uid() = user_id`; writes via service-role only.
+
+## Triggers
+
+- `on_auth_user_created` → inserts a `profiles` row when `auth.users` gets a new row.
+- `on_auth_user_email_changed` → keeps `profiles.email` synced.
+- `on_decks_update` / `on_profiles_update` / `on_user_languages_update` → bump `updated_at`.
+
+## Migrations naming
+
+`NNNN_<description>.sql`, append-only. `NNNN` is zero-padded 4 digits. Examples:
+- `0001_init_profiles_user_languages.sql`
+- `0002_decks_cards.sql`
+- `0003_reviews_attempts.sql`
+- `0004_rls_policies.sql`
+- `NNNN_defer_<feature>.sql` for `/defer` migrations
+- `NNNN_activate_<feature>.sql` for `/activate` migrations
+
+Never edit a migration after it's been applied to a remote env. Forward-only.

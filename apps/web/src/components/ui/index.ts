@@ -1,4 +1,5 @@
-export { Button, buttonVariants, type ButtonProps } from './Button';
+export { Button, type ButtonProps } from './Button';
+export { buttonVariants, type ButtonVariantProps } from './button-variants';
 export {
   Card,
   CardHeader,

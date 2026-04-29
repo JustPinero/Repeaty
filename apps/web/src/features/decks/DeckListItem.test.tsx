@@ -38,8 +38,10 @@ describe('DeckListItem', () => {
   });
 
   it('marks bundled decks with a "starter" or "bundled" tag', () => {
-    renderItem({ source: 'bundled' });
-    expect(screen.getByText(/starter|bundled/i)).toBeInTheDocument();
+    renderItem({ source: 'bundled', name: 'Generic Deck' });
+    // Source tag is labelled distinctly so it doesn't collide with the deck name.
+    const tag = screen.getByLabelText(/source/i);
+    expect(tag).toHaveTextContent(/starter|bundled/i);
   });
 
   it('links to the deck detail route /app/decks/:id', () => {

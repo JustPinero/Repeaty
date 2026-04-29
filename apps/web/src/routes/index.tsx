@@ -2,8 +2,9 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import SignupPage from '@/pages/Signup';
 import LoginPage from '@/pages/Login';
 import ConfirmEmailPage from '@/pages/ConfirmEmail';
-import AppPlaceholderPage from '@/pages/AppPlaceholder';
 import { RequireAuth } from '@/features/auth';
+import { OnboardingGuard } from '@/features/onboarding';
+import { Dashboard } from '@/features/dashboard';
 
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
@@ -14,7 +15,9 @@ const router = createBrowserRouter([
     path: '/app/*',
     element: (
       <RequireAuth>
-        <AppPlaceholderPage />
+        <OnboardingGuard>
+          <Dashboard />
+        </OnboardingGuard>
       </RequireAuth>
     ),
   },

@@ -43,7 +43,7 @@ fi
 
 # ─── 3. Unit tests ────────────────────────────────────────────────────────────
 if [ -f "package.json" ] && grep -q '"test"' package.json 2>/dev/null; then
-  run_step "unit tests (vitest)" pnpm test --run
+  run_step "unit tests (vitest)" pnpm test
 else
   yellow "skip: unit tests — package.json not yet present"
 fi

@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.vite
+.turbo
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+supabase/.branches
+supabase/.temp
+assets/peaty/*.jpg

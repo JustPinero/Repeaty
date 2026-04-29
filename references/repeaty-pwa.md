@@ -2,6 +2,27 @@
 
 Repeaty ships as a PWA in v1. Native iOS/Android via Capacitor is deferred ([DEBT-002](../audits/debt.md)) but the architecture is built so the wrap is mechanical, not a rewrite.
 
+## Mascot
+
+Peaty the parrot is the brand mascot. Pose specs live at [`assets/peaty/peaty-poses.md`](../assets/peaty/peaty-poses.md) (10 poses + app-icon + splash variants). Generated illustrations are saved both to `assets/peaty/` (design source-of-truth) and to `apps/web/public/peaty/` (served statically by Vite).
+
+| Pose                          | File                       | Use case                                             | Lands in   |
+| ----------------------------- | -------------------------- | ---------------------------------------------------- | ---------- |
+| 1. Welcome Wave               | `peat-start.jpg`           | Dashboard greeting card (`<PeatyGreeting>`)          | Phase 1.5  |
+| 2. Cheering Celebration       | `peaty-cheering.jpg`       | Correct answer / perfect pronunciation               | Phase 2 / 4 |
+| 3. Encouraging Thumbs-Up      | `peaty-thumbs.jpg`         | Mid-range score feedback                             | Phase 3 / 4 |
+| 4. Gentle Empathy             | `peaty-empathy.jpg`        | Low-score feedback                                   | Phase 3 / 4 |
+| 5. Speaking with Mic          | `peaty-mic.jpg`            | Pronunciation mode header                            | Phase 4    |
+| 6. Reading Book               | `peaty-book.jpg`           | Flashcards mode header                               | Phase 2    |
+| 7. Speed Stopwatch            | `peaty-stopwatch.jpg`      | Comprehension mode header                            | Phase 3    |
+| 8. Thinking Pose              | `peaty-thinking.jpg`       | Flashcard reveal / idle                              | Phase 2    |
+| 9. Sleepy / Resting           | `peaty-sleepy.jpg`         | Streak broken / inactive state                       | Phase 6    |
+| 10. AI Magic                  | `peaty-magic.jpg`          | Pro features / lesson generation                     | Phase 5    |
+| App icon (192/512 + maskable) | `peaty-icon-{size}.png`    | PWA manifest                                         | Phase 6    |
+| Splash                        | `peaty-splash.jpg`         | App launch                                           | Phase 6    |
+
+The single Welcome Wave pose ships in Phase 1; later poses are generated from the same character reference (per the `peaty-poses.md` workflow note) and added to `apps/web/public/peaty/` as their phases land. Always include a meaningful `alt` describing what Peaty is doing — never `alt="Peaty"` alone.
+
 ## Platform abstraction
 
 Anything that touches a platform-specific browser/native API lives in `apps/web/src/platform/`. Feature code imports `from '@/platform'` and never from `navigator.*`, `window.*`, or `@capacitor/*` directly.

@@ -2,15 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main, "phase-*"]
+  pull_request:
+    branches: [main]
 
 # Action versions verified April 2026. Use /ci-update to refresh.
 
 env:
   NODE_VERSION: "22"
-  PNPM_VERSION: "10"
+  # pnpm version is derived from package.json#packageManager — single source of truth.
 
 jobs:
   # ─── Always-run checks (every PR, every phase) ──────────────────────────────
@@ -21,8 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -38,46 +36,6 @@ jobs:
       - name: Run validate.sh (single source of truth)
         run: bash scripts/validate.sh
 
-  # ─── Conditional E2E (only flows marked complete in e2e-manifest.json) ──────
-  e2e:
-    name: e2e (applicable flows)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: validate
-    if: hashFiles('e2e-manifest.json') != ''
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - name: Determine complete E2E flows
-        id: flows
-        run: |
-          if [ -f "e2e-manifest.json" ]; then
-            FLOWS=$(jq -r '.flows | to_entries[] | select(.value.status == "complete") | .key' e2e-manifest.json | tr '\n' ' ')
-            echo "flows=$FLOWS" >> "$GITHUB_OUTPUT"
-            if [ -z "$FLOWS" ]; then
-              echo "no E2E flows marked 'complete' — skipping"
-            fi
-          fi
-      - name: Install dependencies
-        if: steps.flows.outputs.flows != ''
-        run: pnpm install --frozen-lockfile
-      - name: Install Playwright browsers
-        if: steps.flows.outputs.flows != ''
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Run E2E for completed flows
-        if: steps.flows.outputs.flows != ''
-        run: |
-          for flow in ${{ steps.flows.outputs.flows }}; do
-            echo "→ E2E: $flow"
-            pnpm test:e2e --grep "$flow"
-          done
-
   # ─── Full suite + build verify (main only) ──────────────────────────────────
   build:
     name: production build (main only)
@@ -88,8 +46,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -103,19 +59,69 @@ jobs:
             echo "package.json not yet present — skipping build (Phase 1.1)"
           fi
 
-  # ─── Supabase migrations sanity-check (when present) ────────────────────────
+  # ─── Supabase migrations + integration tests + applicable E2E ───────────────
+  # Combined into one job because every Repeaty flow needs both a live Supabase
+  # and the dev server, so spinning these up twice would just be waste.
   supabase-migrations:
-    name: supabase migrations
+    name: supabase migrations + integration + e2e
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     needs: validate
-    if: hashFiles('supabase/migrations/*.sql') != ''
     steps:
       - uses: actions/checkout@v6
-      - uses: supabase/setup-cli@v2
+      - uses: supabase/setup-cli@v2.0.0
         with:
           version: latest
       - name: Start local Supabase
         run: supabase start
       - name: Apply migrations
         run: supabase db reset --no-seed
+      - name: Capture Supabase env
+        id: sb
+        run: |
+          {
+            echo "SUPABASE_URL=$(supabase status -o env | awk -F= '/^API_URL=/{print $2}' | tr -d '"')"
+            echo "SUPABASE_ANON_KEY=$(supabase status -o env | awk -F= '/^ANON_KEY=/{print $2}' | tr -d '"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tr -d '"')"
+          } >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ steps.sb.outputs.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.sb.outputs.SUPABASE_SERVICE_ROLE_KEY }}
+        run: pnpm --filter @repeaty/web test:integration
+      - name: Determine complete E2E flows
+        id: flows
+        run: |
+          FLOWS=$(jq -r '.flows | to_entries[] | select(.value.status == "complete") | .key' e2e-manifest.json | tr '\n' ' ')
+          echo "flows=$FLOWS" >> "$GITHUB_OUTPUT"
+          if [ -z "$FLOWS" ]; then
+            echo "no E2E flows marked 'complete' — skipping E2E"
+          else
+            echo "running E2E for: $FLOWS"
+          fi
+      - name: Install Playwright browsers
+        if: steps.flows.outputs.flows != ''
+        run: pnpm --filter @repeaty/web exec playwright install --with-deps chromium
+      - name: Run E2E for completed flows
+        if: steps.flows.outputs.flows != ''
+        env:
+          # The Vite dev server (started by playwright's webServer) needs the
+          # VITE_-prefixed names. Forward both so the browser bundle and any
+          # node-side helpers see them.
+          VITE_SUPABASE_URL: ${{ steps.sb.outputs.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ steps.sb.outputs.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
+        run: |
+          for flow in ${{ steps.flows.outputs.flows }}; do
+            echo "→ E2E: $flow"
+            pnpm --filter @repeaty/web test:e2e --grep "$flow"
+          done

@@ -1,0 +1,26 @@
+{
+  "name": "repeaty",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm --filter @repeaty/web dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter @repeaty/web test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gen:types": "supabase gen types typescript --local > packages/shared/src/db-types.ts || echo 'supabase not running — start it first'"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

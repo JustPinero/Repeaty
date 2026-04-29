@@ -103,11 +103,11 @@ jobs:
             echo "package.json not yet present — skipping build (Phase 1.1)"
           fi
 
-  # ─── Supabase migrations sanity-check (when present) ────────────────────────
+  # ─── Supabase migrations + integration tests ───────────────────────────────
   supabase-migrations:
-    name: supabase migrations
+    name: supabase migrations + integration
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: validate
     if: hashFiles('supabase/migrations/*.sql') != ''
     steps:
@@ -119,3 +119,24 @@ jobs:
         run: supabase start
       - name: Apply migrations
         run: supabase db reset --no-seed
+      - name: Capture Supabase env
+        id: sb
+        run: |
+          echo "SUPABASE_URL=$(supabase status -o env | awk -F= '/^API_URL=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          echo "SUPABASE_ANON_KEY=$(supabase status -o env | awk -F= '/^ANON_KEY=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tr -d '"')" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ steps.sb.outputs.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.sb.outputs.SUPABASE_SERVICE_ROLE_KEY }}
+        run: pnpm --filter @repeaty/web test:integration

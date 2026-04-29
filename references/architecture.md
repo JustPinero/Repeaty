@@ -132,11 +132,16 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | @playwright/test                     | ^1.48.2    | E2E (config skeleton; specs land in 1.3+)        | cypress                     | dev-only              |
 | prettier                             | ^3.3.3     | Formatter (single source of truth)               | dprint                      | dev-only              |
 
+### Installed in Request 1.2 (database schema + RLS + integration tests)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| @supabase/supabase-js                | ^2.46.1    | Supabase client (used by integration tests in 1.2; client UI in 1.3+) | (n/a — kickoff) | ~30KB gz       |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |
 | ----------------------------- | ------------ | ------------------------------------------------------- |
-| @supabase/supabase-js         | 1.3          | Supabase client (auth + RLS-respecting reads)            |
 | react-router-dom              | 1.3          | Client-side routing                                      |
 | react-hook-form               | 1.3          | Forms with Zod-validated submission                      |
 | @hookform/resolvers           | 1.3          | Zod resolver for react-hook-form                         |

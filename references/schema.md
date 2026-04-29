@@ -13,14 +13,14 @@ Source of truth for the database. Authoritative SQL lives in `supabase/migration
 ## Tables
 
 ### `profiles`
-Extends `auth.users`. One row per user, created by trigger on `auth.users` insert.
+Extends `auth.users`. One row per user, created by trigger on `auth.users` insert. The trigger fires before onboarding completes, so `display_name` and `native_language_code` are nullable at creation and filled in during the onboarding flow (Request 1.4).
 
 | Column                 | Type                              | Notes                                                       |
 | ---------------------- | --------------------------------- | ----------------------------------------------------------- |
 | id                     | UUID PK, FK auth.users(id)        | Same as auth user id                                        |
-| display_name           | TEXT NOT NULL                     | Set during onboarding                                       |
+| display_name           | TEXT NULL                         | Set during onboarding                                       |
 | email                  | TEXT NOT NULL                     | Mirror of auth.users.email; updated by trigger              |
-| native_language_code   | TEXT NOT NULL                     | BCP-47 (e.g. `en-US`, `es-ES`); set during onboarding       |
+| native_language_code   | TEXT NULL                         | BCP-47 (e.g. `en-US`, `es-ES`); set during onboarding       |
 | tier                   | TEXT NOT NULL DEFAULT 'free'      | enum-like: `free` \| `pro` \| `admin` (CHECK constraint)    |
 | is_admin               | BOOLEAN NOT NULL DEFAULT false    | Gates `/admin` route; orthogonal to `tier`                  |
 | created_at             | TIMESTAMPTZ                       |                                                             |
@@ -28,7 +28,8 @@ Extends `auth.users`. One row per user, created by trigger on `auth.users` inser
 
 **RLS:**
 - `SELECT`: `auth.uid() = id`
-- `UPDATE`: `auth.uid() = id` AND only on a small allowlist of columns (`display_name`, `native_language_code`). `tier` and `is_admin` are mutated only by service-role (i.e. `/admin` flips via Edge Function or admin SQL).
+- `UPDATE`: `auth.uid() = id` AND `tier` / `is_admin` pinned to their pre-update values (subselect-anchored `WITH CHECK`). `tier` and `is_admin` are flipped only via service-role (i.e. `/admin` flips via Edge Function in Phase 5 — see [DEBT-001](../audits/debt.md) for billing-driven flips later).
+- No `INSERT` policy: rows are created exclusively by the `on_auth_user_created` trigger (security definer, bypasses RLS).
 
 ### `user_languages`
 A user can study multiple languages, each at its own CEFR level.
@@ -53,9 +54,12 @@ Bundled (built into the app) or owned (AI-generated, imported).
 | language_code  | TEXT NOT NULL                     | target language                                             |
 | cefr_level     | TEXT NOT NULL                     | `A1`..`C2`                                                  |
 | source         | TEXT NOT NULL                     | enum: `bundled` \| `ai_generated` \| `imported`             |
-| owner_id       | UUID NULL, FK auth.users(id)      | NULL when source = `bundled`                                |
+| owner_id       | UUID NULL, FK auth.users(id)      | NULL when source = `bundled`, NOT NULL otherwise (CHECK)    |
 | created_at     | TIMESTAMPTZ                       |                                                             |
 | deleted_at     | TIMESTAMPTZ NULL                  | soft delete                                                 |
+
+**Constraints:** `decks_owner_matches_source` CHECK — `(source = 'bundled' AND owner_id IS NULL) OR (source <> 'bundled' AND owner_id IS NOT NULL)`. Prevents both orphaned non-bundled decks and accidentally-owned bundled decks.
+**Indexes:** `idx_decks_owner (owner_id) WHERE owner_id IS NOT NULL`, `idx_decks_source_language (source, language_code)`.
 
 **RLS:**
 - `SELECT`: `(source = 'bundled' AND deleted_at IS NULL) OR (owner_id = auth.uid() AND deleted_at IS NULL)`
@@ -168,11 +172,17 @@ Per-user daily counters for paid-tier features.
 
 ## Migrations naming
 
-`NNNN_<description>.sql`, append-only. `NNNN` is zero-padded 4 digits. Examples:
-- `0001_init_profiles_user_languages.sql`
-- `0002_decks_cards.sql`
-- `0003_reviews_attempts.sql`
-- `0004_rls_policies.sql`
+`NNNN_<description>.sql`, append-only. `NNNN` is zero-padded 4 digits.
+
+Phase 1 migrations:
+- `0001_init_profiles.sql` — `profiles` table, `set_updated_at()` helper, `on_auth_user_created` + `on_auth_user_email_changed` triggers
+- `0002_user_languages.sql`
+- `0003_decks_cards.sql` — `decks` and `cards` plus the `decks_owner_matches_source` CHECK and the deck/card indexes
+- `0004_reviews.sql`
+- `0005_attempts.sql`
+- `0006_rls_policies.sql` — every RLS policy in one transaction
+
+Convention for later phases:
 - `NNNN_defer_<feature>.sql` for `/defer` migrations
 - `NNNN_activate_<feature>.sql` for `/activate` migrations
 

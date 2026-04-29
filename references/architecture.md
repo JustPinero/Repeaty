@@ -138,15 +138,20 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
 | @supabase/supabase-js                | ^2.46.1    | Supabase client (used by integration tests in 1.2; client UI in 1.3+) | (n/a — kickoff) | ~30KB gz       |
 
+### Installed in Request 1.3 (Supabase Auth + signup/login UI)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| react-router-dom                     | ^6.28.0    | Client-side routing (`createBrowserRouter`)      | tanstack-router             | ~12KB gz              |
+| react-hook-form                      | ^7.53.2    | Forms with low re-render cost                    | formik                      | ~9KB gz               |
+| @hookform/resolvers                  | ^3.9.1     | Zod resolver for react-hook-form                 | (n/a)                       | ~1KB gz               |
+| @tanstack/react-query                | ^5.59.20   | Auth-state subscription + future server state    | SWR                         | ~12KB gz              |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |
 | ----------------------------- | ------------ | ------------------------------------------------------- |
-| react-router-dom              | 1.3          | Client-side routing                                      |
-| react-hook-form               | 1.3          | Forms with Zod-validated submission                      |
-| @hookform/resolvers           | 1.3          | Zod resolver for react-hook-form                         |
 | zustand                       | 1.5          | Cross-component UI state (active language, wizard state) |
-| @tanstack/react-query         | 1.5          | Server-state caching                                     |
 | dexie                         | Phase 2      | IndexedDB wrapper for offline review queue               |
 | workbox-*                     | Phase 6      | Service worker for PWA offline                           |
 | shadcn/ui (CLI-installed)     | Phase 2      | Component primitives                                     |

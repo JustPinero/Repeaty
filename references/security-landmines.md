@@ -88,4 +88,4 @@ export const isInsideBaseDir = async (path: string, base: string) => {
 };
 ```
 
-(Phase 1.1 wires the import path; this file is the spec.)
+(Spec only at this point. `packages/shared/src/validators.ts` is created in the request that first needs one of these helpers — most likely Phase 4's `score-pronunciation` Edge Function for the path-traversal guard. Until then, this section is a contract for that future request, not a description of existing code.)

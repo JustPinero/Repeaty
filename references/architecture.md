@@ -153,6 +153,16 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
 | zustand                              | ^5.0.1     | Wizard transient state with localStorage persist (browser-back continuity) | redux, jotai | ~1KB gz               |
 
+### Installed in Request 2.1 (bundled decks + seed pipeline)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| tsx                                  | ^4.19.2    | Run TS scripts (seed-decks.ts) directly from pnpm tasks | ts-node, esbuild     | dev-only              |
+| js-yaml                              | ^4.1.0     | Parse deck-spec YAML files                       | toml, json (rejected for editor UX) | dev-only      |
+| @types/js-yaml                       | ^4.0.9     | Types for above                                  | (n/a)                       | dev-only              |
+| uuid                                 | ^11.0.3    | UUIDv5 deterministic deck/card IDs in the seed migration | (n/a)             | dev-only              |
+| @types/uuid                          | ^10.0.0    | Types for above                                  | (n/a)                       | dev-only              |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |

@@ -1,6 +1,40 @@
-# RED placeholder. GREEN replaces with ~30 A1 Spanish cards.
+# Spanish — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index,
+# and reordering re-rolls every card's UUID. Add new cards at the end.
 id: starter-es-a1
 name: Spanish — Starter (A1)
 language_code: es
 cefr_level: A1
-cards: []
+cards:
+  - { target: hola, native: hello }
+  - { target: buenos días, native: good morning }
+  - { target: buenas tardes, native: good afternoon }
+  - { target: buenas noches, native: good evening }
+  - { target: adiós, native: goodbye }
+  - { target: hasta luego, native: see you later }
+  - { target: sí, native: "yes" }
+  - { target: "no", native: "no" }
+  - { target: gracias, native: thank you }
+  - { target: de nada, native: you're welcome }
+  - { target: por favor, native: please }
+  - { target: uno, native: one }
+  - { target: dos, native: two }
+  - { target: tres, native: three }
+  - { target: cuatro, native: four }
+  - { target: cinco, native: five }
+  - { target: seis, native: six }
+  - { target: siete, native: seven }
+  - { target: ocho, native: eight }
+  - { target: nueve, native: nine }
+  - { target: diez, native: ten }
+  - { target: lunes, native: Monday }
+  - { target: martes, native: Tuesday }
+  - { target: miércoles, native: Wednesday }
+  - { target: jueves, native: Thursday }
+  - { target: viernes, native: Friday }
+  - { target: sábado, native: Saturday }
+  - { target: domingo, native: Sunday }
+  - { target: rojo, native: red }
+  - { target: azul, native: blue }

@@ -1,6 +1,40 @@
-# RED placeholder. GREEN replaces with ~30 A1 French cards.
+# French — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index,
+# and reordering re-rolls every card's UUID. Add new cards at the end.
 id: starter-fr-a1
 name: French — Starter (A1)
 language_code: fr
 cefr_level: A1
-cards: []
+cards:
+  - { target: bonjour, native: hello }
+  - { target: bonsoir, native: good evening }
+  - { target: salut, native: hi (casual) }
+  - { target: au revoir, native: goodbye }
+  - { target: à bientôt, native: see you soon }
+  - { target: oui, native: "yes" }
+  - { target: "non", native: "no" }
+  - { target: merci, native: thank you }
+  - { target: de rien, native: you're welcome }
+  - { target: "s'il vous plaît", native: please (formal) }
+  - { target: excusez-moi, native: excuse me }
+  - { target: un, native: one }
+  - { target: deux, native: two }
+  - { target: trois, native: three }
+  - { target: quatre, native: four }
+  - { target: cinq, native: five }
+  - { target: six, native: six }
+  - { target: sept, native: seven }
+  - { target: huit, native: eight }
+  - { target: neuf, native: nine }
+  - { target: dix, native: ten }
+  - { target: lundi, native: Monday }
+  - { target: mardi, native: Tuesday }
+  - { target: mercredi, native: Wednesday }
+  - { target: jeudi, native: Thursday }
+  - { target: vendredi, native: Friday }
+  - { target: samedi, native: Saturday }
+  - { target: dimanche, native: Sunday }
+  - { target: rouge, native: red }
+  - { target: bleu, native: blue }

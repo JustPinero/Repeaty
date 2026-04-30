@@ -7,3 +7,4 @@ export {
   type ComprehensionProgress,
 } from './useComprehensionSession';
 export { default as ComprehensionSessionPage } from './ComprehensionSessionPage';
+export { CardComprehensionHistory } from './CardComprehensionHistory';

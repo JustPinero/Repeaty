@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, CardContent } from '@/components/ui';
+import { FeedbackPanel } from '@/features/feedback';
 import {
   isDeckNotFoundError,
   useComprehensionSession,
 } from './useComprehensionSession';
 import { Timer } from './Timer';
+
+// v1: hardcode 'en' for feedback localization. Phase-5 swaps in a real
+// nativeLanguageCode lookup from `profiles.native_language_code` (alongside
+// the Claude-backed feedback call).
+const NATIVE_LANG_PLACEHOLDER = 'en';
 
 const BUCKET_HEADING: Record<string, string> = {
   perfect: 'Perfect — 100',
@@ -107,7 +113,7 @@ export default function ComprehensionSessionPage() {
           </p>
 
           {result ? (
-            <div className="space-y-2 animate-flip-in">
+            <div className="space-y-3 animate-flip-in">
               <p className="text-lg font-semibold">
                 {BUCKET_HEADING[result.bucket]} — {result.score}/100
               </p>
@@ -117,6 +123,22 @@ export default function ComprehensionSessionPage() {
               <p className="text-sm text-stone-600">
                 Correct answer: <strong className="font-medium">{session.currentCard?.native_text}</strong>
               </p>
+              <FeedbackPanel
+                kind="comprehension"
+                bucket={result.bucket}
+                targetText={session.currentCard?.target_text ?? ''}
+                nativeText={session.currentCard?.native_text ?? ''}
+                userResponse={result.response}
+                nativeLanguageCode={NATIVE_LANG_PLACEHOLDER}
+              />
+              {session.currentCard && (
+                <Link
+                  to={`/app/decks/${deckId}/cards/${session.currentCard.id}`}
+                  className="text-xs underline text-stone-500"
+                >
+                  View card history
+                </Link>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="w-full space-y-3">

@@ -102,6 +102,7 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
   const submitResponse = useCallback(
     async (response: string): Promise<CardResult> => {
       if (!currentCard) throw new Error('no current card');
+      if (!userId) throw new Error('not authenticated');
       const trimmed = response.trim();
       const responseMs = Math.max(0, Date.now() - cardStartedAt.current);
       const sim = similarity(currentCard.native_text, trimmed, {
@@ -113,18 +114,39 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
         // strict matching, which is fine for "yes"/"no"/"thank you" etc.
       });
       const score = comprehensionScore(sim, responseMs);
+      const cardBucket = bucket(score);
       const result: CardResult = {
         cardId: currentCard.id,
         score,
-        bucket: bucket(score),
+        bucket: cardBucket,
         responseMs,
         similarity: sim,
         response: trimmed,
       };
+
+      // Persist the attempt. RLS policy `comp_insert_own` enforces that
+      // user_id = auth.uid(); we set it explicitly to keep the contract
+      // visible at the call site. `correct` is a coarse-grained boolean
+      // derived from the bucket — anything not 'miss' counts as correct
+      // for streak / dashboard purposes.
+      const { error: insertError } = await supabase
+        .from('comprehension_attempts')
+        .insert({
+          user_id: userId,
+          card_id: currentCard.id,
+          response_ms: responseMs,
+          correct: cardBucket !== 'miss',
+        });
+      if (insertError) {
+        // Don't block the UX on a persistence hiccup — log and continue.
+        // Future Phase-6 offline queue (Dexie) will absorb retry semantics.
+        console.error('comprehension_attempts insert failed', { cardId: currentCard.id, error: insertError });
+      }
+
       setPendingResult(result);
       return result;
     },
-    [currentCard],
+    [currentCard, userId],
   );
 
   const next = useCallback(() => {

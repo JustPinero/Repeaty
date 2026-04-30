@@ -6,9 +6,11 @@ import React from 'react';
 
 // Query chains:
 //   from('decks').select().eq().is().maybeSingle()  → existence check
-//   from('cards').select(...).eq('deck_id').order('id') → cards (no joined attempts in 3.2)
+//   from('cards').select(...).eq('deck_id').order('id') → cards
+//   from('comprehension_attempts').insert(...)        → write on submit (3.4)
 const deckResult = vi.fn();
 const cardsResult = vi.fn();
+const attemptsInsert = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -27,6 +29,11 @@ vi.mock('@/lib/supabase', () => ({
           select: () => ({
             eq: () => ({ order: () => cardsResult() }),
           }),
+        };
+      }
+      if (table === 'comprehension_attempts') {
+        return {
+          insert: (...args: unknown[]) => attemptsInsert(...args),
         };
       }
       throw new Error(`unexpected table ${table}`);
@@ -57,7 +64,9 @@ describe('useComprehensionSession', () => {
   beforeEach(() => {
     deckResult.mockReset();
     cardsResult.mockReset();
+    attemptsInsert.mockReset();
     deckResult.mockResolvedValue({ data: { id: 'deck-1' }, error: null });
+    attemptsInsert.mockResolvedValue({ error: null });
   });
 
   it('lands on the first card after the deck + cards fetch', async () => {
@@ -137,5 +146,48 @@ describe('useComprehensionSession', () => {
     const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toMatch(/network down/);
+  });
+
+  it('inserts a comprehension_attempts row on submit with response_ms + correct flag', async () => {
+    cardsResult.mockResolvedValue({ data: cards, error: null });
+    const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => { await result.current.submitResponse('hello'); });
+
+    expect(attemptsInsert).toHaveBeenCalledTimes(1);
+    const [payload] = attemptsInsert.mock.calls[0]!;
+    expect(payload).toMatchObject({
+      user_id: 'u-1',
+      card_id: 'c1',
+      correct: true,
+    });
+    expect(payload.response_ms).toBeTypeOf('number');
+    expect(payload.response_ms).toBeGreaterThanOrEqual(0);
+  });
+
+  it('records correct=false for a missed answer', async () => {
+    cardsResult.mockResolvedValue({ data: cards, error: null });
+    const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => { await result.current.submitResponse('xxx'); });
+
+    const [payload] = attemptsInsert.mock.calls[0]!;
+    expect(payload.correct).toBe(false);
+  });
+
+  it('continues to UX-resolve even if the attempts insert fails (logs to console.error)', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    attemptsInsert.mockResolvedValue({ error: { message: 'rls blocked' } });
+    cardsResult.mockResolvedValue({ data: cards, error: null });
+    const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let submitted;
+    await act(async () => { submitted = await result.current.submitResponse('hello'); });
+    expect(submitted!.bucket).toBe('perfect');
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

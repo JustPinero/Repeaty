@@ -117,8 +117,24 @@ FSRS state, one row per (user, card).
 | created_at        | TIMESTAMPTZ                       |                                                      |
 
 **Indexes:** `idx_pron_user_card_created (user_id, card_id, created_at DESC)` for history view.
-**RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy: `user_id/...`.
-**Storage retention:** Cron job deletes audio files older than 7 days for free-tier users (kept indefinitely for Pro). `audio_storage_path` is set to NULL when the file is reaped, but the row stays for history.
+**RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy — see `pronunciation-audio` § below.
+**Storage retention:** Cron job deletes audio files older than 7 days for free-tier users (kept indefinitely for Pro). `audio_storage_path` is set to NULL when the file is reaped, but the row stays for history. Lands in 0012 (Request 4.6).
+
+## Storage buckets
+
+### `pronunciation-audio` (Phase 4, Request 4.3)
+
+Private bucket (`public = false`) holding the recorded audio for `pronunciation_attempts`. Naming convention enforced by `apps/web/src/features/pronunciation/storage.ts`:
+
+```
+${user_id}/${card_id}/<uuidv4>.<ext>
+```
+
+`<ext>` is `webm` (Chrome/Firefox/Edge), `mp4` (iOS Safari), `mp3`/`ogg`/`wav` for Phase-5 backfills, or `bin` if mime is unknown. The 10 MB blob cap (`MAX_AUDIO_BYTES`) is enforced helper-side before the upload call.
+
+**RLS (migration 0011):** `(SELECT auth.uid())::text = (storage.foldername(name))[1]` on SELECT/INSERT/UPDATE/DELETE for `bucket_id = 'pronunciation-audio'`. Cross-user reads + writes are blocked at the storage layer — see `apps/web/tests/integration/supabase/bucket-rls.test.ts`.
+
+The `score-pronunciation` Edge Function (4.4) downloads via the service-role client (RLS bypass) but still verifies `audio_storage_path.startsWith(\`${user_id}/\`)` as a path-traversal defense — the helper enforces this on write, and the Edge Function re-asserts on read.
 
 ### `comprehension_attempts`
 

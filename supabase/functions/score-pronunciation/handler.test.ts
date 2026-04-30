@@ -6,8 +6,14 @@
  * Supabase, no real OpenAI; tests stub each dep.
  */
 
-import { assertEquals, assertExists } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { createHandler, type HandlerDeps } from './handler.ts';
+import { assertEquals, assertExists } from 'std/assert';
+import {
+  createHandler,
+  type AttemptRow,
+  type CardForUser,
+  type HandlerDeps,
+  type TranscribeArgs,
+} from './handler.ts';
 
 const FAKE_USER = '00000000-0000-0000-0000-000000000aaa';
 const FAKE_OTHER_USER = '00000000-0000-0000-0000-000000000bbb';
@@ -15,32 +21,27 @@ const FAKE_CARD = '00000000-0000-0000-0000-000000000ccc';
 const FAKE_PATH = `${FAKE_USER}/${FAKE_CARD}/abc.webm`;
 const FAKE_BLOB = new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/webm' });
 
-function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps {
+function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs: object[] } {
   const logs: object[] = [];
-  return {
-    getUserFromJwt: async (jwt: string) =>
-      jwt === 'good-jwt' ? { id: FAKE_USER } : null,
-    getCardForUser: async (cardId, jwt) =>
-      cardId === FAKE_CARD && jwt === 'good-jwt'
-        ? {
-            id: FAKE_CARD,
-            target_text: 'hola',
-            language_code: 'es',
-          }
-        : null,
-    downloadAudio: async (_path) => FAKE_BLOB,
-    transcribeAudio: async (_args) => 'hola',
-    insertAttempt: async (_row) => ({
-      id: '00000000-0000-0000-0000-00000000a111',
-    }),
+  const base: HandlerDeps = {
+    getUserFromJwt: (jwt: string): Promise<{ id: string } | null> =>
+      Promise.resolve(jwt === 'good-jwt' ? { id: FAKE_USER } : null),
+    getCardForUser: (cardId: string, jwt: string): Promise<CardForUser | null> =>
+      Promise.resolve(
+        cardId === FAKE_CARD && jwt === 'good-jwt'
+          ? { id: FAKE_CARD, target_text: 'hola', language_code: 'es' }
+          : null,
+      ),
+    downloadAudio: (_path: string): Promise<Blob | null> => Promise.resolve(FAKE_BLOB),
+    transcribeAudio: (_args: TranscribeArgs): Promise<string> => Promise.resolve('hola'),
+    insertAttempt: (_row: AttemptRow): Promise<{ id: string }> =>
+      Promise.resolve({ id: '00000000-0000-0000-0000-00000000a111' }),
     now: () => Date.now(),
     log: (line: object) => {
       logs.push(line);
     },
-    ...overrides,
-    // Expose the captured logs for assertions
-    __logs: logs,
-  } as unknown as HandlerDeps;
+  };
+  return { ...base, ...overrides, __logs: logs };
 }
 
 function buildRequest(

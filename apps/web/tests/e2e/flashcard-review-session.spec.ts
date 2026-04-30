@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 // Phase-2 E2E: signup → onboarding → dashboard "Start review" CTA →
-// reveal + rate a handful of bundled Spanish A1 cards → session-complete
-// summary. CI runs this when the manifest entry is `complete`.
+// reveal + rate 3 bundled cards → progress counter shows 3 reviewed.
+// CI runs this when the manifest entry is `complete`.
 
 test.describe('@phase-2 flashcard-review-session', () => {
-  test('new user can rate 3 bundled Spanish cards and reach the completion summary', async ({
+  test('new user can rate 3 bundled cards and see the progress counter advance', async ({
     page,
   }) => {
     const email = `e2e-flashcard-${Date.now()}@example.com`;
@@ -29,35 +29,26 @@ test.describe('@phase-2 flashcard-review-session', () => {
     await page.getByLabel(/level|cefr/i).selectOption('A1');
     await page.getByRole('button', { name: /finish|done|complete/i }).click();
 
-    // Dashboard renders with the review queue + a Start-review CTA pointing at
-    // the Spanish bundled deck.
+    // Dashboard renders with a Start-review CTA. The top deck depends on the
+    // (unordered) per-deck aggregation; we just need _some_ start link to a
+    // bundled deck's review path.
     await expect(page).toHaveURL(/\/app/, { timeout: 15_000 });
-    const startCta = page.getByRole('link', { name: /start review.*spanish/i });
+    const startCta = page.getByRole('link', { name: /start review/i }).first();
     await expect(startCta).toBeVisible({ timeout: 15_000 });
     await startCta.click();
 
-    // First flashcard (Spanish target text — could be any of the 30; we just
-    // assert the Reveal button is there and the URL is the review path).
+    // Inside the review session.
     await expect(page).toHaveURL(/\/app\/decks\/.+\/review/);
     await expect(page.getByRole('button', { name: /reveal answer/i })).toBeVisible();
 
-    // Rate three cards Good. Each iteration: reveal → click Good → next card.
-    for (let i = 0; i < 3; i++) {
+    // Rate 3 cards Good. After each rating, wait for the progress counter to
+    // advance — that's a deterministic signal that submitRating finished and
+    // the queue advanced (or completion screen rendered, which has its own
+    // `Session complete` heading).
+    for (let i = 1; i <= 3; i++) {
       await page.getByRole('button', { name: /reveal answer/i }).click();
       await page.getByRole('button', { name: /^good$/i }).click();
-      // Either the next card's Reveal button appears, or the completion heading.
-      await page.waitForFunction(
-        () => {
-          const reveal = document.querySelector('button')?.textContent ?? '';
-          const complete = document.body.innerText;
-          return /Reveal answer/i.test(reveal) || /Session complete/i.test(complete);
-        },
-        { timeout: 10_000 },
-      );
+      await expect(page.getByText(new RegExp(`${i} reviewed`))).toBeVisible({ timeout: 15_000 });
     }
-
-    // After three cards there are still cards left (deck has 30), so we stop
-    // early and just confirm progress is being recorded.
-    await expect(page.getByText(/3 reviewed/i)).toBeVisible();
   });
 });

@@ -5,10 +5,10 @@ import type { ReactNode } from 'react';
 import React from 'react';
 import { Rating } from '@repeaty/shared';
 
-// supabase.from(...).select().eq() chain returns a thenable resolving to {data,error}.
-// supabase.from(...).upsert() returns a thenable resolving to {error}.
+// Single nested-select for cards (with embedded reviews) is one chain:
+//   from('cards').select(...).eq('deck_id').eq('reviews.user_id').order('id')
+// Upsert is still its own chain on from('reviews').
 const cardsResult = vi.fn();
-const reviewsResult = vi.fn();
 const upsertResult = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
@@ -17,17 +17,14 @@ vi.mock('@/lib/supabase', () => ({
       if (table === 'cards') {
         return {
           select: () => ({
-            eq: () => ({ order: () => cardsResult() }),
+            eq: () => ({
+              eq: () => ({ order: () => cardsResult() }),
+            }),
           }),
         };
       }
       if (table === 'reviews') {
         return {
-          select: () => ({
-            eq: (_col: string, _val: unknown) => ({
-              in: () => reviewsResult(),
-            }),
-          }),
           upsert: (...args: unknown[]) => upsertResult(...args),
         };
       }
@@ -49,23 +46,24 @@ function wrapper({ children }: { children: ReactNode }) {
   return React.createElement(QueryClientProvider, { client }, children);
 }
 
+// Each row carries a `reviews` array (zero or one element after the user_id
+// filter). Empty array = "new card" path; one element = "resume from prior
+// FSRS state" path.
 const cards = [
-  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
-  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
-  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
+  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es', reviews: [] as Array<{ fsrs_state: unknown }> },
+  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es', reviews: [] as Array<{ fsrs_state: unknown }> },
+  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es', reviews: [] as Array<{ fsrs_state: unknown }> },
 ];
 
 describe('useReviewSession', () => {
   beforeEach(() => {
     cardsResult.mockReset();
-    reviewsResult.mockReset();
     upsertResult.mockReset();
     upsertResult.mockResolvedValue({ error: null });
   });
 
   it('starts in loading state and lands on the first card after fetch', async () => {
     cardsResult.mockResolvedValue({ data: cards, error: null });
-    reviewsResult.mockResolvedValue({ data: [], error: null });
 
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     expect(result.current.isLoading).toBe(true);
@@ -82,7 +80,6 @@ describe('useReviewSession', () => {
 
   it('advances to the next card after Good rating', async () => {
     cardsResult.mockResolvedValue({ data: cards, error: null });
-    reviewsResult.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -96,11 +93,9 @@ describe('useReviewSession', () => {
 
   it('re-enqueues the current card on Again (visits it again before completing)', async () => {
     cardsResult.mockResolvedValue({ data: cards, error: null });
-    reviewsResult.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // c1 → Again → goes to back of queue (remaining: c2, c3, c1).
     await act(async () => { await result.current.submitRating(Rating.Again); });
     expect(result.current.currentCard?.id).toBe('c2');
     expect(result.current.progress.correct).toBe(0);
@@ -111,16 +106,14 @@ describe('useReviewSession', () => {
     await act(async () => { await result.current.submitRating(Rating.Good); });
     expect(result.current.currentCard?.id).toBe('c1');
 
-    // c1 again, this time Good → done.
     await act(async () => { await result.current.submitRating(Rating.Good); });
     expect(result.current.isComplete).toBe(true);
-    expect(result.current.progress.reviewed).toBe(4); // c1×2 + c2 + c3
-    expect(result.current.progress.correct).toBe(3);  // 3 Goods, 1 Again
+    expect(result.current.progress.reviewed).toBe(4);
+    expect(result.current.progress.correct).toBe(3);
   });
 
   it('upserts a reviews row with FSRS-derived state on each rating', async () => {
     cardsResult.mockResolvedValue({ data: cards, error: null });
-    reviewsResult.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -138,9 +131,39 @@ describe('useReviewSession', () => {
     expect(typeof payload.interval_days).toBe('number');
   });
 
+  it('uses the per-card persisted FSRS state when reviews come back populated', async () => {
+    const persistedState = {
+      v: 1,
+      due: '2026-04-30T18:00:00.000Z',
+      stability: 7.5,
+      difficulty: 4,
+      elapsed_days: 0,
+      scheduled_days: 7,
+      reps: 3,
+      lapses: 0,
+      state: 2,
+      last_review: '2026-04-23T18:00:00.000Z',
+    };
+    const cardsWithReview = [
+      { ...cards[0], reviews: [{ fsrs_state: persistedState }] },
+      cards[1],
+      cards[2],
+    ];
+    cardsResult.mockResolvedValue({ data: cardsWithReview, error: null });
+
+    const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // After Good on c1, the new state is derived from persistedState (reps=3),
+    // not from a fresh initialState. The FSRS scheduler will produce a new
+    // scheduled_days > 7 (mature card).
+    await act(async () => { await result.current.submitRating(Rating.Good); });
+    const [payload] = upsertResult.mock.calls[0]!;
+    expect(payload.fsrs_state.reps).toBe(4);
+  });
+
   it('renders an error state when the cards query fails', async () => {
     cardsResult.mockResolvedValue({ data: null, error: { message: 'network down' } });
-    reviewsResult.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toMatch(/network down/);

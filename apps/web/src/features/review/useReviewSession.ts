@@ -48,30 +48,35 @@ export function useReviewSession(deckId: string): ReviewSessionState {
     queryKey: ['review-session', deckId, userId],
     enabled: !!userId && !!deckId,
     queryFn: async () => {
-      const cardsRes = await supabase
+      // Single round-trip via supabase-js's nested-select syntax: pulls the
+      // user's review-row (or none) for each card in one query. The reviews
+      // RLS policy already scopes to auth.uid() = user_id, so we don't need
+      // an extra `.eq('reviews.user_id', ...)` filter — but we keep it
+      // explicit-and-correct as a defense-in-depth annotation.
+      const res = await supabase
         .from('cards')
-        .select('id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code')
+        .select(
+          `id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code,
+           reviews(fsrs_state)`,
+        )
         .eq('deck_id', deckId)
+        .eq('reviews.user_id', userId!)
         .order('id');
-      if (cardsRes.error) throw new Error(cardsRes.error.message);
-      const cards = (cardsRes.data ?? []) as ReviewCard[];
-
-      const reviewsRes = await supabase
-        .from('reviews')
-        .select('card_id, fsrs_state')
-        .eq('user_id', userId!)
-        .in('card_id', cards.map((c) => c.id));
-      if (reviewsRes.error) throw new Error(reviewsRes.error.message);
-      const reviewsByCard = new Map<string, FsrsState>();
-      for (const r of reviewsRes.data ?? []) {
-        reviewsByCard.set(r.card_id as string, r.fsrs_state as FsrsState);
-      }
+      if (res.error) throw new Error(res.error.message);
+      const rows = (res.data ?? []) as Array<
+        ReviewCard & { reviews: Array<{ fsrs_state: FsrsState }> }
+      >;
 
       const now = new Date();
-      const items: QueueItem[] = cards.map((card) => ({
-        card,
-        state: reviewsByCard.get(card.id) ?? initialState(now),
-      }));
+      const items: QueueItem[] = rows.map((row) => {
+        const persistedState = row.reviews[0]?.fsrs_state;
+        const { reviews: _reviews, ...card } = row;
+        void _reviews;
+        return {
+          card,
+          state: persistedState ?? initialState(now),
+        };
+      });
       return { items };
     },
   });

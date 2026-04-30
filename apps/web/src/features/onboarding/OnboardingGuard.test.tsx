@@ -128,4 +128,31 @@ describe('OnboardingGuard', () => {
     });
     expect(screen.queryByTestId('wizard')).not.toBeInTheDocument();
   });
+
+  it('renders an alert with a Retry button when the profile query fails', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'profiles')
+        return mockProfileQuery({
+          data: null,
+          error: { message: 'network down' },
+        });
+      if (table === 'user_languages') return mockUserLanguagesQuery({ data: [], error: null });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    render(
+      <OnboardingGuard>
+        <div data-testid="protected">PROTECTED</div>
+      </OnboardingGuard>,
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/network down/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('wizard')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  });
 });

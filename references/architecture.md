@@ -153,13 +153,40 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
 | zustand                              | ^5.0.1     | Wizard transient state with localStorage persist (browser-back continuity) | redux, jotai | ~1KB gz               |
 
+### Installed in Request 2.1 (bundled decks + seed pipeline)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| tsx                                  | ^4.19.2    | Run TS scripts (seed-decks.ts) directly from pnpm tasks | ts-node, esbuild     | dev-only              |
+| js-yaml                              | ^4.1.0     | Parse deck-spec YAML files                       | toml, json (rejected for editor UX) | dev-only      |
+| @types/js-yaml                       | ^4.0.9     | Types for above                                  | (n/a)                       | dev-only              |
+| uuid                                 | ^11.0.3    | UUIDv5 deterministic deck/card IDs in the seed migration | (n/a)             | dev-only              |
+| @types/uuid                          | ^10.0.0    | Types for above                                  | (n/a)                       | dev-only              |
+
+### Installed in Request 2.2 (FSRS algorithm)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| ts-fsrs (in `@repeaty/shared`)       | ^4.5.0     | FSRS-4.5+ scheduler engine wrapped by `@repeaty/shared/fsrs` (lockfile resolves to 4.7.1) | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
+| vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
+
+### Installed in Request 2.3 (shadcn primitives + flashcard UI)
+
+shadcn/ui itself is copy-paste rather than a runtime dep — components live in `apps/web/src/components/ui/` (Button, Card, button-variants). The runtime libraries the primitives depend on are below.
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| class-variance-authority             | ^0.7.1     | Variant API for shadcn `Button` (variant + size) | tailwind-variants           | ~1KB gz               |
+| clsx                                 | ^2.1.1     | Conditional className composer used by `cn()`    | classnames                  | ~0.5KB gz             |
+| tailwind-merge                       | ^2.5.4     | Resolves duplicate Tailwind classes inside `cn()` | (n/a — required for shadcn pattern) | ~6KB gz       |
+| tailwindcss-animate (devDep)         | ^1.0.7     | `animate-flip-in` keyframes for the Flashcard reveal transition | (n/a)         | dev-only              |
+
 ### Pending (added in later requests)
 
 | Package                       | Planned in   | Reason                                                  |
 | ----------------------------- | ------------ | ------------------------------------------------------- |
-| dexie                         | Phase 2      | IndexedDB wrapper for offline review queue               |
+| dexie                         | Phase 6      | IndexedDB wrapper for offline review queue (deferred from Phase 2 — review session ships online-only) |
 | workbox-*                     | Phase 6      | Service worker for PWA offline                           |
-| shadcn/ui (CLI-installed)     | Phase 2      | Component primitives                                     |
 
 ## Phases (live build plan)
 

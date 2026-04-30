@@ -14,13 +14,22 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
+    "test:integration": "pnpm --filter @repeaty/web test:integration",
     "test:e2e": "pnpm --filter @repeaty/web test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "seed:decks": "tsx scripts/seed/seed-decks.ts",
     "gen:types": "supabase gen types typescript --local > packages/shared/src/db-types.ts || echo 'supabase not running — start it first'"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.17.6",
+    "@types/uuid": "^10.0.0",
+    "js-yaml": "^4.1.0",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "uuid": "^11.0.3",
+    "vitest": "^2.1.4"
   }
 }

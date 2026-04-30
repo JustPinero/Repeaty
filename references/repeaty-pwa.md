@@ -29,31 +29,35 @@ Anything that touches a platform-specific browser/native API lives in `apps/web/
 
 ```
 apps/web/src/platform/
-  ├── index.ts         // Public API (re-exports active impl)
-  ├── types.ts         // Interface definitions (PlatformAdapter)
-  ├── web.ts           // Web implementations (active in v1)
-  └── capacitor.ts     // Stubbed in v1; activated when DEBT-002 ships
+  ├── index.ts         // Active adapter selector (default: web)
+  ├── types.ts         // PlatformAdapter contract
+  ├── web.ts           // Web implementations (live in 2.5: SpeechSynthesis-backed playTargetText)
+  ├── web.test.ts      // Mock-driven coverage for the web adapter
+  └── capacitor.ts     // Lands when DEBT-002 activates
 ```
 
-### `PlatformAdapter` interface (Phase 4 lands the real version)
+### `PlatformAdapter` interface (TTS is live in 2.5; mic methods land in Phase 4)
 
 ```ts
-export interface PlatformAdapter {
-  // Microphone
-  requestMicPermission(): Promise<'granted' | 'denied' | 'prompt'>;
-  startRecording(): Promise<RecordingHandle>;          // wraps MediaRecorder on web
-  stopRecording(handle: RecordingHandle): Promise<Blob>;
+export type PlatformAdapter = {
+  /** Speak text in a given BCP-47 language. SpeechSynthesis on web. */
+  playTargetText(text: string, options: { lang: string; rate?: number }): Promise<void>;
+  /** Cancel any in-flight speech. */
+  cancelSpeech(): void;
+  /** True iff the runtime can actually speak (gates the Flashcard Play button). */
+  canSpeak(): boolean;
 
-  // Audio playback
-  playTargetText(text: string, lang: string): Promise<void>;   // SpeechSynthesis on web
-  playRecordedAudio(blob: Blob): Promise<void>;
-
-  // Future (post-v1)
-  scheduleLocalNotification?(opts: { title: string; at: Date }): Promise<void>;
-}
+  // Phase 4 (pronunciation mode):
+  // requestMicPermission(): Promise<'granted' | 'denied' | 'prompt'>;
+  // startRecording(): Promise<unknown>;
+  // stopRecording(handle: unknown): Promise<Blob>;
+  // playRecordedAudio(blob: Blob): Promise<void>;
+};
 ```
 
-Selection is at module load via `import.meta.env.VITE_PLATFORM` — defaults to `'web'`. Capacitor builds set `VITE_PLATFORM=capacitor` and replace the import path.
+Selection is at module load via `import.meta.env.VITE_PLATFORM` — defaults to `'web'`. `'capacitor'` lands when [DEBT-002](../audits/debt.md) activates; until then the index falls back to web with a console warning.
+
+The Flashcard component reads `platform.canSpeak()` at render time and only shows the 🔊 Play button when both `languageCode` is supplied and the runtime can speak. SSR / no-SpeechSynthesis browsers see the card without the button — the textual answer is still there.
 
 ### Why this matters
 

@@ -21,6 +21,13 @@ vi.mock('@/features/auth', () => ({
   useAuthUser: () => useAuthUserMock(),
 }));
 
+// Stub the ReviewQueue (it has its own tests). This keeps the Dashboard
+// fromMock surface narrow — only profiles/user_languages flows need to be
+// mocked here.
+vi.mock('./ReviewQueue', () => ({
+  ReviewQueue: () => <section data-testid="review-queue-stub">queue</section>,
+}));
+
 import Dashboard from './Dashboard';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -79,7 +86,7 @@ describe('Dashboard', () => {
     });
   });
 
-  it('renders the placeholder review queue', async () => {
+  it('renders the review queue', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
@@ -88,7 +95,7 @@ describe('Dashboard', () => {
 
     render(<Dashboard />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByText(/Phase 2/i)).toBeInTheDocument();
+      expect(screen.getByTestId('review-queue-stub')).toBeInTheDocument();
     });
   });
 
@@ -117,5 +124,35 @@ describe('Dashboard', () => {
       expect(screen.getByRole('heading', { name: /Hi.*Ben/i })).toBeInTheDocument();
     });
     expect(screen.queryByLabelText(/active language|studying/i)).not.toBeInTheDocument();
+  });
+
+  it('shows an alert with a Retry button when the dashboard query fails', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'profiles')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'network down' },
+              }),
+            }),
+          }),
+        };
+      if (table === 'user_languages') return mockUserLanguagesQuery([]);
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    render(<Dashboard />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/network down/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    // Header still rendered so user can sign out.
+    expect(screen.getByRole('button', { name: /sign out|log ?out/i })).toBeInTheDocument();
+    // Greeting/queue NOT rendered.
+    expect(screen.queryByRole('heading', { name: /Hi.*Ben/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('review-queue-stub')).not.toBeInTheDocument();
   });
 });

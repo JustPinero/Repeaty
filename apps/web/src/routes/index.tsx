@@ -7,6 +7,7 @@ import { OnboardingGuard } from '@/features/onboarding';
 import { Dashboard } from '@/features/dashboard';
 import { DeckListPage } from '@/features/decks';
 import { ReviewSessionPage } from '@/features/review';
+import { ComprehensionSessionPage } from '@/features/comprehension';
 
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
@@ -26,6 +27,7 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'decks', element: <DeckListPage /> },
       { path: 'decks/:deckId/review', element: <ReviewSessionPage /> },
+      { path: 'decks/:deckId/comprehension', element: <ComprehensionSessionPage /> },
       { path: '*', element: <Navigate to="/app" replace /> },
     ],
   },

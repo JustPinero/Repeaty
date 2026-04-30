@@ -13,7 +13,7 @@
     },
     "comprehension-session": {
       "phase": 3,
-      "status": "not-started",
+      "status": "in-progress",
       "spec": "apps/web/tests/e2e/comprehension-session.spec.ts"
     },
     "pronunciation-session": {

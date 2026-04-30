@@ -23,3 +23,5 @@ export {
   dueAt,
   isDue,
 } from './fsrs';
+
+export { similarity, type SimilarityOptions } from './similarity';

@@ -10,6 +10,7 @@ These end up in the JS shipped to the user. **Never put a secret behind a `VITE_
 | ------------------------- | -------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------- |
 | `VITE_SUPABASE_URL`       | Supabase project URL (e.g. `https://abcd.supabase.co`)                     | every env    | Public; safe to expose                                                      |
 | `VITE_SUPABASE_ANON_KEY`  | Supabase anon JWT used for unauthenticated requests + as the auth bootstrap | every env    | Public by design — RLS protects the data                                    |
+| `VITE_PLATFORM`           | Selects the platform adapter at module load. `web` (default) or `capacitor` (lands when DEBT-002 activates). | optional | Read by `apps/web/src/platform/index.ts`; unset/`web` → SpeechSynthesis-backed adapter |
 
 ## Server-only (Edge Functions / local Supabase CLI)
 

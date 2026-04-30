@@ -9,6 +9,9 @@ const useReviewSessionMock = vi.fn();
 
 vi.mock('./useReviewSession', () => ({
   useReviewSession: (deckId: string) => useReviewSessionMock(deckId),
+  // Page imports the sentinel detector to branch on deck-not-found errors.
+  isDeckNotFoundError: (error: unknown) =>
+    error instanceof Error && error.message === 'DECK_NOT_FOUND',
 }));
 
 // The page imports Flashcard via @/features/decks (barrel), which transitively
@@ -160,5 +163,22 @@ describe('ReviewSessionPage', () => {
     renderAt('/app/decks/deck-1/review');
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/network down/)).toBeInTheDocument();
+  });
+
+  it('renders a "Deck not found" alert when error.message === "DECK_NOT_FOUND"', () => {
+    useReviewSessionMock.mockReturnValue({
+      isLoading: false,
+      isError: true,
+      error: new Error('DECK_NOT_FOUND'),
+      isComplete: false,
+      currentCard: null,
+      progress: { reviewed: 0, remaining: 0, total: 0, correct: 0 },
+      submitRating: vi.fn(),
+    });
+    renderAt('/app/decks/bad-id/review');
+    expect(screen.getByRole('heading', { name: /deck not found/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /back to your decks/i })).toBeInTheDocument();
+    // The "Nothing due" empty state should NOT be rendered.
+    expect(screen.queryByText(/nothing due/i)).not.toBeInTheDocument();
   });
 });

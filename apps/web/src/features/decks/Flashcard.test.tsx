@@ -95,4 +95,23 @@ describe('Flashcard', () => {
     expect(playTargetTextMock).toHaveBeenCalledTimes(1);
     expect(playTargetTextMock).toHaveBeenCalledWith('hola', { lang: 'es' });
   });
+
+  it('logs (without surfacing) when platform.playTargetText rejects', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    playTargetTextMock.mockRejectedValueOnce(new Error('synthesis-failed'));
+    const user = userEvent.setup();
+    render(<Flashcard targetText="hola" nativeText="hello" languageCode="es" />);
+    await user.click(screen.getByRole('button', { name: /play|speak|listen/i }));
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
+    });
+    const args = errorSpy.mock.calls[0]!;
+    expect(String(args[0])).toMatch(/TTS playback failed/);
+    expect(args[1]).toMatchObject({ lang: 'es' });
+    // No alert / dialog / toast surfaced.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    errorSpy.mockRestore();
+  });
 });

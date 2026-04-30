@@ -39,9 +39,11 @@ export function Flashcard({
     setSpeaking(true);
     try {
       await platform.playTargetText(targetText, { lang: languageCode });
-    } catch {
-      // Best-effort — don't surface speech errors to the user; the answer
-      // is still readable.
+    } catch (err) {
+      // Best-effort UX (no toast / dialog) — the answer is still readable.
+      // But we DO log so beta-user bug reports have a diagnostic trail
+      // (esp. for DEBT-003 ja/zh degraded voices and iOS user-gesture rule).
+      console.error('TTS playback failed', { lang: languageCode, error: err });
     } finally {
       setSpeaking(false);
     }

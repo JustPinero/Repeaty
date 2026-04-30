@@ -167,7 +167,7 @@ Every new dependency added after kickoff appends a row here with: package name, 
 
 | Package                              | Version    | Reason                                           | Considered                  | Cost                  |
 | ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
-| ts-fsrs (in `@repeaty/shared`)       | ^4.5.0     | FSRS-4.5+ scheduler engine wrapped by `@repeaty/shared/fsrs` (lockfile resolves to 4.7.1) | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
+| ts-fsrs (in `@repeaty/shared`)       | ^4.7.1     | FSRS-4.7+ scheduler engine wrapped by `@repeaty/shared/fsrs`. Pinned to ^4.7.1 (the version we validate against) rather than ^4.5.0 to avoid silent behavioral upgrades on fresh installs. | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
 | vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
 
 ### Installed in Request 2.3 (shadcn primitives + flashcard UI)

@@ -83,6 +83,7 @@ export default function ReviewSessionPage() {
           nativeText={session.currentCard.native_text}
           exampleTarget={session.currentCard.example_sentence_target ?? undefined}
           exampleNative={session.currentCard.example_sentence_native ?? undefined}
+          languageCode={session.currentCard.language_code}
         />
       )}
 

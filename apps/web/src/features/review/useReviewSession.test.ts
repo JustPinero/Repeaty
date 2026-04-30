@@ -50,9 +50,9 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const cards = [
-  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, example_sentence_target: null, example_sentence_native: null },
-  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, example_sentence_target: null, example_sentence_native: null },
-  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, example_sentence_target: null, example_sentence_native: null },
+  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
+  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
+  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, example_sentence_target: null, example_sentence_native: null, language_code: 'es' },
 ];
 
 describe('useReviewSession', () => {

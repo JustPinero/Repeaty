@@ -11,6 +11,7 @@ export type ReviewCard = {
   ipa: string | null;
   example_sentence_target: string | null;
   example_sentence_native: string | null;
+  language_code: string;
 };
 
 export type ReviewProgress = {
@@ -49,7 +50,7 @@ export function useReviewSession(deckId: string): ReviewSessionState {
     queryFn: async () => {
       const cardsRes = await supabase
         .from('cards')
-        .select('id, target_text, native_text, ipa, example_sentence_target, example_sentence_native')
+        .select('id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code')
         .eq('deck_id', deckId)
         .order('id');
       if (cardsRes.error) throw new Error(cardsRes.error.message);

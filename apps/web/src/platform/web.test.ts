@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { webPlatform } from './web';
 
 describe('webPlatform.playTargetText', () => {
@@ -82,14 +82,16 @@ describe('webPlatform.playTargetText', () => {
   });
 
   it('rejects when SpeechSynthesisUtterance fires onerror', async () => {
-    (window as unknown as { speechSynthesis: { speak: (u: SpeechSynthesisUtterance) => void; cancel: () => void } }).speechSynthesis = {
-      speak(u: SpeechSynthesisUtterance & { onerror?: ((e: Event) => void) | null }) {
+    const errorSynth = {
+      speak(u: SpeechSynthesisUtterance) {
         queueMicrotask(() => {
-          u.onerror?.(new Event('error'));
+          const onerror = (u as { onerror?: (e: unknown) => void }).onerror;
+          onerror?.({ error: 'synthesis-failed' });
         });
       },
       cancel: () => undefined,
     };
+    (window as unknown as { speechSynthesis: unknown }).speechSynthesis = errorSynth;
     await expect(webPlatform.playTargetText('x', { lang: 'es' })).rejects.toThrow();
   });
 

@@ -1,7 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+const playTargetTextMock = vi.fn();
+const canSpeakMock = vi.fn();
+
+vi.mock('@/platform', () => ({
+  platform: {
+    playTargetText: (...args: unknown[]) => playTargetTextMock(...args),
+    cancelSpeech: vi.fn(),
+    canSpeak: () => canSpeakMock(),
+  },
+}));
+
 import { Flashcard } from './Flashcard';
+
+beforeEach(() => {
+  playTargetTextMock.mockReset();
+  playTargetTextMock.mockResolvedValue(undefined);
+  canSpeakMock.mockReset();
+  canSpeakMock.mockReturnValue(true);
+});
 
 describe('Flashcard', () => {
   it('shows the target text on the front', () => {
@@ -51,5 +70,29 @@ describe('Flashcard', () => {
     rerender(<Flashcard targetText="adiós" nativeText="goodbye" />);
     expect(screen.queryByText('goodbye')).not.toBeInTheDocument();
     expect(screen.getByText('adiós')).toBeInTheDocument();
+  });
+
+  it('renders a Play button when languageCode is provided and platform.canSpeak() is true', () => {
+    render(<Flashcard targetText="hola" nativeText="hello" languageCode="es" />);
+    expect(screen.getByRole('button', { name: /play|speak|listen/i })).toBeInTheDocument();
+  });
+
+  it('does NOT render a Play button when languageCode is missing', () => {
+    render(<Flashcard targetText="hola" nativeText="hello" />);
+    expect(screen.queryByRole('button', { name: /play|speak|listen/i })).not.toBeInTheDocument();
+  });
+
+  it('does NOT render a Play button when platform.canSpeak() is false', () => {
+    canSpeakMock.mockReturnValue(false);
+    render(<Flashcard targetText="hola" nativeText="hello" languageCode="es" />);
+    expect(screen.queryByRole('button', { name: /play|speak|listen/i })).not.toBeInTheDocument();
+  });
+
+  it('clicking Play calls platform.playTargetText with the target + lang', async () => {
+    const user = userEvent.setup();
+    render(<Flashcard targetText="hola" nativeText="hello" languageCode="es" />);
+    await user.click(screen.getByRole('button', { name: /play|speak|listen/i }));
+    expect(playTargetTextMock).toHaveBeenCalledTimes(1);
+    expect(playTargetTextMock).toHaveBeenCalledWith('hola', { lang: 'es' });
   });
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Flashcard } from '@/features/decks';
-import { useReviewSession } from './useReviewSession';
+import { useReviewSession, isDeckNotFoundError } from './useReviewSession';
 import { RatingButtons } from './RatingButtons';
 import type { Rating } from '@repeaty/shared';
 
@@ -29,6 +29,21 @@ export default function ReviewSessionPage() {
   }
 
   if (session.isError) {
+    if (isDeckNotFoundError(session.error)) {
+      return (
+        <main className="flex min-h-full items-center justify-center bg-peaty-cream p-6">
+          <div role="alert" className="rounded-xl border border-stone-200 bg-white shadow-sm p-6 max-w-md text-center">
+            <h1 className="text-xl font-semibold">Deck not found</h1>
+            <p className="mt-2 text-sm text-stone-600">
+              This deck doesn’t exist or isn’t available to you.
+            </p>
+            <Link to="/app/decks" className="mt-4 inline-block underline">
+              Back to your decks
+            </Link>
+          </div>
+        </main>
+      );
+    }
     return (
       <main className="flex min-h-full items-center justify-center bg-peaty-cream p-6">
         <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6 max-w-md">

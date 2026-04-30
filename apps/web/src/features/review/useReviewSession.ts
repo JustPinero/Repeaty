@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { initialState, schedule, Rating, type FsrsState } from '@repeaty/shared';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +40,16 @@ type SessionData = {
   items: QueueItem[];
 };
 
+/**
+ * Sentinel error message for the deck-not-found path. ReviewSessionPage
+ * matches on this to render a 404 UX instead of the generic alert.
+ */
+export const DECK_NOT_FOUND = 'DECK_NOT_FOUND';
+
+export function isDeckNotFoundError(error: unknown): boolean {
+  return error instanceof Error && error.message === DECK_NOT_FOUND;
+}
+
 export function useReviewSession(deckId: string): ReviewSessionState {
   const { user } = useAuthUser();
   const userId = user?.id ?? null;
@@ -48,11 +58,21 @@ export function useReviewSession(deckId: string): ReviewSessionState {
     queryKey: ['review-session', deckId, userId],
     enabled: !!userId && !!deckId,
     queryFn: async () => {
+      // Verify the deck exists and is visible to this user BEFORE we fetch its
+      // cards. Without this, a typo'd or stale-link deckId returns []-cards
+      // (RLS denies invisible decks the same way it denies non-existent ones)
+      // and the page renders "Nothing due" — a misleading empty state.
+      const deckRes = await supabase
+        .from('decks')
+        .select('id')
+        .eq('id', deckId)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (deckRes.error) throw new Error(deckRes.error.message);
+      if (!deckRes.data) throw new Error(DECK_NOT_FOUND);
+
       // Single round-trip via supabase-js's nested-select syntax: pulls the
-      // user's review-row (or none) for each card in one query. The reviews
-      // RLS policy already scopes to auth.uid() = user_id, so we don't need
-      // an extra `.eq('reviews.user_id', ...)` filter — but we keep it
-      // explicit-and-correct as a defense-in-depth annotation.
+      // user's review-row (or none) for each card in one query.
       const res = await supabase
         .from('cards')
         .select(
@@ -87,6 +107,12 @@ export function useReviewSession(deckId: string): ReviewSessionState {
   const [total, setTotal] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
+  // Re-entrancy guard. Component-level `submitting` (in ReviewSessionPage)
+  // covers the user-click path; this ref is hook-internal defense-in-depth
+  // for any future caller (offline replay loop in Phase 6, auto-rate-on-timeout
+  // for comprehension mode, etc.) that doesn't gate calls itself.
+  const submittingRef = useRef(false);
+
   useEffect(() => {
     if (data?.items) {
       setQueue(data.items);
@@ -100,32 +126,38 @@ export function useReviewSession(deckId: string): ReviewSessionState {
   const submitRating = useCallback(
     async (rating: Rating) => {
       if (!userId) return;
-      const head = queue[0];
-      if (!head) return;
+      if (submittingRef.current) return;
+      submittingRef.current = true;
+      try {
+        const head = queue[0];
+        if (!head) return;
 
-      const now = new Date();
-      const newState = schedule(head.state, rating, now);
+        const now = new Date();
+        const newState = schedule(head.state, rating, now);
 
-      const { error: upsertError } = await supabase.from('reviews').upsert(
-        {
-          user_id: userId,
-          card_id: head.card.id,
-          fsrs_state: newState,
-          due_at: newState.due,
-          interval_days: newState.scheduled_days,
-          ease: newState.difficulty,
-          last_reviewed_at: now.toISOString(),
-        },
-        { onConflict: 'user_id,card_id' },
-      );
-      if (upsertError) throw new Error(upsertError.message);
+        const { error: upsertError } = await supabase.from('reviews').upsert(
+          {
+            user_id: userId,
+            card_id: head.card.id,
+            fsrs_state: newState,
+            due_at: newState.due,
+            interval_days: newState.scheduled_days,
+            ease: newState.difficulty,
+            last_reviewed_at: now.toISOString(),
+          },
+          { onConflict: 'user_id,card_id' },
+        );
+        if (upsertError) throw new Error(upsertError.message);
 
-      setQueue((prev) => {
-        const rest = prev.slice(1);
-        return rating === Rating.Again ? [...rest, { card: head.card, state: newState }] : rest;
-      });
-      setReviewedCount((c) => c + 1);
-      if (rating !== Rating.Again) setCorrectCount((c) => c + 1);
+        setQueue((prev) => {
+          const rest = prev.slice(1);
+          return rating === Rating.Again ? [...rest, { card: head.card, state: newState }] : rest;
+        });
+        setReviewedCount((c) => c + 1);
+        if (rating !== Rating.Again) setCorrectCount((c) => c + 1);
+      } finally {
+        submittingRef.current = false;
+      }
     },
     [userId, queue],
   );

@@ -23,3 +23,6 @@ export {
   dueAt,
   isDue,
 } from './fsrs';
+
+export { similarity, type SimilarityOptions } from './similarity';
+export { comprehensionScore, bucket, type ScoreBucket } from './comprehension-score';

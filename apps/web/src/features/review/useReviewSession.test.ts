@@ -5,15 +5,27 @@ import type { ReactNode } from 'react';
 import React from 'react';
 import { Rating } from '@repeaty/shared';
 
-// Single nested-select for cards (with embedded reviews) is one chain:
+// Query chains:
+//   from('decks').select().eq().is().maybeSingle()  → existence check
 //   from('cards').select(...).eq('deck_id').eq('reviews.user_id').order('id')
-// Upsert is still its own chain on from('reviews').
+//                                                  → cards + nested reviews
+//   from('reviews').upsert(...)                     → write on rate
+const deckResult = vi.fn();
 const cardsResult = vi.fn();
 const upsertResult = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (table: string) => {
+      if (table === 'decks') {
+        return {
+          select: () => ({
+            eq: () => ({
+              is: () => ({ maybeSingle: () => deckResult() }),
+            }),
+          }),
+        };
+      }
       if (table === 'cards') {
         return {
           select: () => ({
@@ -57,8 +69,10 @@ const cards = [
 
 describe('useReviewSession', () => {
   beforeEach(() => {
+    deckResult.mockReset();
     cardsResult.mockReset();
     upsertResult.mockReset();
+    deckResult.mockResolvedValue({ data: { id: 'deck-1' }, error: null });
     upsertResult.mockResolvedValue({ error: null });
   });
 
@@ -167,5 +181,53 @@ describe('useReviewSession', () => {
     const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toMatch(/network down/);
+  });
+
+  it('throws DECK_NOT_FOUND when the deck SELECT returns null', async () => {
+    deckResult.mockResolvedValue({ data: null, error: null });
+    const { result } = renderHook(() => useReviewSession('bad-deck-id'), { wrapper });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.message).toBe('DECK_NOT_FOUND');
+    // cards query should never have been issued.
+    expect(cardsResult).not.toHaveBeenCalled();
+  });
+
+  it('isDeckNotFoundError detects the sentinel', async () => {
+    const { isDeckNotFoundError } = await import('./useReviewSession');
+    expect(isDeckNotFoundError(new Error('DECK_NOT_FOUND'))).toBe(true);
+    expect(isDeckNotFoundError(new Error('something else'))).toBe(false);
+    expect(isDeckNotFoundError(null)).toBe(false);
+  });
+
+  it('ignores re-entrant submitRating calls while the first is in flight', async () => {
+    cardsResult.mockResolvedValue({ data: cards, error: null });
+    let resolveUpsert: (v: { error: null }) => void = () => {};
+    upsertResult.mockImplementationOnce(
+      () => new Promise<{ error: null }>((r) => { resolveUpsert = r; }),
+    );
+    const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let firstPromise: Promise<void> | undefined;
+    let secondPromise: Promise<void> | undefined;
+    await act(async () => {
+      firstPromise = result.current.submitRating(Rating.Good);
+      // Second call before first resolves — should be ignored by the ref guard.
+      secondPromise = result.current.submitRating(Rating.Good);
+      await Promise.resolve();
+    });
+
+    // Only one upsert kicked off.
+    expect(upsertResult).toHaveBeenCalledTimes(1);
+
+    // Resolve the first; both promises should settle.
+    await act(async () => {
+      resolveUpsert({ error: null });
+      await firstPromise;
+      await secondPromise;
+    });
+
+    // Exactly one rating counted.
+    expect(result.current.progress.reviewed).toBe(1);
   });
 });

@@ -44,9 +44,15 @@ describe('DeckListItem', () => {
     expect(tag).toHaveTextContent(/starter|bundled/i);
   });
 
-  it('links to the review session for the deck (/app/decks/:id/review)', () => {
+  it('links to the review session via an aria-labelled "Review" action', () => {
     renderItem({ id: 'abc-123' });
-    const link = screen.getByRole('link', { name: /Spanish — Starter/ });
+    const link = screen.getByRole('link', { name: /^Review Spanish/i });
     expect(link).toHaveAttribute('href', '/app/decks/abc-123/review');
+  });
+
+  it('links to the comprehension session via an aria-labelled "Comprehension" action', () => {
+    renderItem({ id: 'abc-123' });
+    const link = screen.getByRole('link', { name: /^Comprehension drill/i });
+    expect(link).toHaveAttribute('href', '/app/decks/abc-123/comprehension');
   });
 });

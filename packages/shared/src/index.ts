@@ -26,3 +26,11 @@ export {
 
 export { similarity, type SimilarityOptions } from './similarity';
 export { comprehensionScore, bucket, type ScoreBucket } from './comprehension-score';
+export {
+  EDGE_ERROR_CODES,
+  EDGE_ERROR_HTTP_STATUS,
+  type EdgeErrorCode,
+  type EdgeErrorBody,
+  type EdgeSuccessBody,
+  type EdgeResponseBody,
+} from './edge-errors';

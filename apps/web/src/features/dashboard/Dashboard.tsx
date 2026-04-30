@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Header } from './Header';
 import { PeatyGreeting } from './PeatyGreeting';
 import { LanguageSelector } from './LanguageSelector';
-import { ReviewQueuePlaceholder } from './ReviewQueuePlaceholder';
+import { ReviewQueue } from './ReviewQueue';
 
 type DashboardData = {
   displayName: string | null;
@@ -59,7 +59,7 @@ export default function Dashboard() {
                 <LanguageSelector targetLanguageCodes={data.targetLanguageCodes} />
               </div>
             )}
-            <ReviewQueuePlaceholder />
+            <ReviewQueue />
           </>
         )}
       </main>

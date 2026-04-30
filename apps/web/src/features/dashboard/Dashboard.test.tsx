@@ -21,6 +21,13 @@ vi.mock('@/features/auth', () => ({
   useAuthUser: () => useAuthUserMock(),
 }));
 
+// Stub the ReviewQueue (it has its own tests). This keeps the Dashboard
+// fromMock surface narrow — only profiles/user_languages flows need to be
+// mocked here.
+vi.mock('./ReviewQueue', () => ({
+  ReviewQueue: () => <section data-testid="review-queue-stub">queue</section>,
+}));
+
 import Dashboard from './Dashboard';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -79,7 +86,7 @@ describe('Dashboard', () => {
     });
   });
 
-  it('renders the placeholder review queue', async () => {
+  it('renders the review queue', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
@@ -88,7 +95,7 @@ describe('Dashboard', () => {
 
     render(<Dashboard />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByText(/Phase 2/i)).toBeInTheDocument();
+      expect(screen.getByTestId('review-queue-stub')).toBeInTheDocument();
     });
   });
 
@@ -146,5 +153,6 @@ describe('Dashboard', () => {
     expect(screen.getByRole('button', { name: /sign out|log ?out/i })).toBeInTheDocument();
     // Greeting/queue NOT rendered.
     expect(screen.queryByRole('heading', { name: /Hi.*Ben/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('review-queue-stub')).not.toBeInTheDocument();
   });
 });

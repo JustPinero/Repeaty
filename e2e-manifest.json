@@ -8,7 +8,7 @@
     },
     "flashcard-review-session": {
       "phase": 2,
-      "status": "not-started",
+      "status": "complete",
       "spec": "apps/web/tests/e2e/flashcard-review-session.spec.ts"
     },
     "comprehension-session": {

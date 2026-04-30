@@ -190,4 +190,46 @@ describe('useComprehensionSession', () => {
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
+
+  it('ignores re-entrant submitResponse calls while a submission is in flight', async () => {
+    cardsResult.mockResolvedValue({ data: cards, error: null });
+    let resolveInsert: (v: { error: null }) => void = () => {};
+    attemptsInsert.mockImplementationOnce(
+      () => new Promise<{ error: null }>((r) => { resolveInsert = r; }),
+    );
+    const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let firstPromise: Promise<unknown> | undefined;
+    let secondCallThrew = false;
+    await act(async () => {
+      firstPromise = result.current.submitResponse('hello');
+      try {
+        await result.current.submitResponse('world');
+      } catch {
+        secondCallThrew = true;
+      }
+      await Promise.resolve();
+    });
+
+    // Only one insert kicked off — re-entrancy guard short-circuited the second.
+    expect(attemptsInsert).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveInsert({ error: null });
+      await firstPromise;
+    });
+
+    void secondCallThrew;
+    expect(result.current.pendingResult).not.toBeNull();
+  });
+
+  it('marks isComplete with empty-state semantics when the deck has zero cards', async () => {
+    cardsResult.mockResolvedValue({ data: [], error: null });
+    const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isComplete).toBe(true);
+    expect(result.current.progress.total).toBe(0);
+    expect(result.current.currentCard).toBeNull();
+  });
 });

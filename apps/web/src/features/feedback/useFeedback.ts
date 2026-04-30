@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { ScoreBucket } from '@repeaty/shared';
 import { lookupFeedback } from './canned-text';
 
@@ -13,19 +14,28 @@ export type FeedbackInput = {
 
 export type FeedbackResult = {
   text: string | null;
-  /** v1 is synchronous + cached; Phase 5 swaps in Claude → loading goes true while in flight. */
+  /** v1 is synchronous; Phase 5 swaps in Claude → goes `true` while a useQuery is fetching. */
   isLoading: boolean;
 };
 
 /**
  * v1: synchronous canned-text lookup keyed on (bucket, native-language prefix).
  *
- * Phase 5 will replace the body with a TanStack-Query-backed call to the
- * `generate-feedback` Edge Function. The signature here stays stable —
- * callers won't change.
+ * Hook shape: uses `useMemo` so we obey the rules of hooks (consistent React
+ * internal call count) and so the Phase-5 swap-in (which adds `useQuery`) is a
+ * drop-in body change without any caller-visible reorder. The `useMemo`
+ * dependency list mirrors the would-be `useQuery` queryKey shape.
+ *
+ * Phase 5 will replace the body with a TanStack-Query call to the
+ * `generate-feedback` Edge Function. The signature stays stable —
+ * `FeedbackInput` and `FeedbackResult` are preserved per the API-contracts
+ * doc.
  */
 export function useFeedback(input: FeedbackInput): FeedbackResult {
-  const prefix = (input.nativeLanguageCode || '').toLowerCase().split('-')[0] ?? 'en';
-  const text = lookupFeedback({ bucket: input.bucket, nativeLangPrefix: prefix });
+  const text = useMemo(() => {
+    const prefix = (input.nativeLanguageCode || '').toLowerCase().split('-')[0] ?? 'en';
+    return lookupFeedback({ bucket: input.bucket, nativeLangPrefix: prefix });
+  }, [input.bucket, input.nativeLanguageCode]);
+
   return { text, isLoading: false };
 }

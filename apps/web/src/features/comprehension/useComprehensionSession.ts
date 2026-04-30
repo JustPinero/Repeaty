@@ -83,6 +83,11 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
   const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const cardStartedAt = useRef<number>(Date.now());
+  // Re-entrancy guard. ComprehensionSessionPage's `submitting` flag covers the
+  // user-click path; this ref is hook-internal defense-in-depth (mirrors
+  // useReviewSession's pattern). Future callers (auto-rate-on-timeout, etc.)
+  // get the same guarantee without needing to gate themselves.
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (data) {
@@ -97,12 +102,21 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
   const cards = data ?? [];
   const total = cards.length;
   const currentCard = cards[index] ?? null;
-  const isComplete = !isLoading && !isError && hydrated && index >= total && total > 0;
+  // isComplete now also covers the empty-deck case (total === 0); the page's
+  // empty-state branch checks `progress.total === 0` to differentiate.
+  const isComplete = !isLoading && !isError && hydrated && (total === 0 || index >= total);
 
   const submitResponse = useCallback(
     async (response: string): Promise<CardResult> => {
       if (!currentCard) throw new Error('no current card');
       if (!userId) throw new Error('not authenticated');
+      if (submittingRef.current) {
+        // Re-entrant call — return the pending result if we have one, else
+        // a placeholder. Caller should respect this no-op rather than retry.
+        if (pendingResult) return pendingResult;
+        throw new Error('submission already in flight');
+      }
+      submittingRef.current = true;
       const trimmed = response.trim();
       const responseMs = Math.max(0, Date.now() - cardStartedAt.current);
       const sim = similarity(currentCard.native_text, trimmed, {
@@ -144,9 +158,10 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
       }
 
       setPendingResult(result);
+      submittingRef.current = false;
       return result;
     },
-    [currentCard, userId],
+    [currentCard, userId, pendingResult],
   );
 
   const next = useCallback(() => {

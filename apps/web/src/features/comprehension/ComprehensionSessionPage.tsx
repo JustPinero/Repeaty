@@ -85,6 +85,23 @@ export default function ComprehensionSessionPage() {
   }
 
   if (session.isComplete) {
+    // Empty deck (zero cards loaded) is structurally distinct from a finished
+    // session — show a friendly "deck is empty" rather than a 0/0 summary.
+    if (session.progress.total === 0) {
+      return (
+        <main className="flex min-h-full items-center justify-center bg-peaty-cream p-6">
+          <div className="rounded-xl bg-white shadow-sm p-6 text-center max-w-md">
+            <h1 className="text-xl font-semibold">This deck is empty</h1>
+            <p className="mt-2 text-sm text-stone-600">
+              No cards yet — try a different deck.
+            </p>
+            <Link to="/app/decks" className="mt-4 inline-block underline">
+              Back to your decks
+            </Link>
+          </div>
+        </main>
+      );
+    }
     return (
       <main className="flex min-h-full items-center justify-center bg-peaty-cream p-6">
         <div className="rounded-xl bg-white shadow-sm p-8 text-center max-w-md space-y-3">

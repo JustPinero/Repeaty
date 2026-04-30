@@ -25,7 +25,7 @@
 
 ```
 apps/web/                 React + Vite PWA (the only client)
-packages/shared/          Cross-cutting types, Zod schemas, FSRS algorithm
+packages/shared/          Cross-cutting types, Zod schemas, and pure algorithm helpers (FSRS, similarity, comprehension-score)
 supabase/migrations/      SQL migrations (append-only)
 supabase/functions/       Edge Functions (Deno)
   ├── score-pronunciation/   Whisper proxy
@@ -91,6 +91,8 @@ Feature code imports from `@/platform`, never from `@capacitor/*` or `navigator.
 **Context:** Phoneme-level alignment is more accurate but adds substantial complexity and dependency footprint.
 **Decision:** Score by normalized Levenshtein distance between Whisper transcript and expected target text. Phoneme-level scoring deferred ([DEBT-004](../audits/debt.md)).
 **Consequences:** Good enough for v1; doesn't catch fine-grained accent issues. Russian needs Cyrillic-aware normalization (NFC + casefold + dehyphenation) before comparison.
+
+> **Note (Request 3.1):** The v1 shared similarity helper (`packages/shared/src/similarity.ts`) does NFC + casefold for `ru` (no diacritic fold — Ё/Е, Й/И are real semantic distinctions). Dehyphenation is Phase-4-specific (it matters for Whisper-transcript-vs-target alignment; comprehension's typed answers don't carry soft hyphens). The same module is shared between comprehension (Phase 3) and pronunciation (Phase 4). Latin-script langs (es/fr/it/de/pt) get diacritic fold (NFD → strip `\p{M}` → NFC); ja/zh get NFKC for full/half-width unification.
 
 ### ADR-008 — Manual `tier` flag in v1, Stripe deferred
 **Status:** Accepted (2026-04-29)

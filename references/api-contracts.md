@@ -32,6 +32,19 @@ INVALID_PAYLOAD | UNAUTHENTICATED | FORBIDDEN_TIER | NOT_FOUND |
 RATE_LIMITED | UPSTREAM_TIMEOUT | UPSTREAM_FAILED | INTERNAL
 ```
 
+## Non-Edge-Function operations
+
+Some writes go directly via supabase-js (RLS-gated), with no Edge Function involved:
+
+| Table                    | Phase | Write path                                                       |
+| ------------------------ | ----- | ---------------------------------------------------------------- |
+| `reviews`                | 2     | `useReviewSession.submitRating` upserts on each rating          |
+| `comprehension_attempts` | 3     | `useComprehensionSession.submitResponse` inserts on each submit |
+
+These rely on the table's RLS policies to enforce `auth.uid() = user_id`. The integration suites (`bundled-decks.test.ts` for review reads, `comprehension-attempts-rls.test.ts` for comprehension writes) verify the WITH-CHECK and cross-user isolation.
+
+`pronunciation_attempts` (Phase 4), `feedback_cache` (Phase 5), and `rate_limits` (Phase 5) are written by Edge Functions only — never by the client.
+
 ## `score-pronunciation` (Phase 4)
 
 **Purpose:** transcribe a recorded audio blob with OpenAI Whisper and score it against the expected target text.
@@ -140,6 +153,10 @@ type GenerateFeedbackResponse = {
   cost_estimate_usd: number;          // 0 when cached
 };
 ```
+
+### Phase-3 stub bridge
+
+Until Phase 5 lands, the client uses `apps/web/src/features/feedback/useFeedback.ts` — a synchronous canned-text lookup keyed on `(bucket, native-language-prefix)` (table in `apps/web/src/features/feedback/canned-text.ts`). The hook's public types — `FeedbackInput` (`{ kind, bucket, targetText, nativeText, userResponse, nativeLanguageCode }`) and `FeedbackResult` (`{ text: string | null, isLoading: boolean }`) — will be preserved when the body swaps to a `useQuery`-backed call to this Edge Function. **Don't change the public hook types during the Phase-5 swap without coordinating** — every callsite (currently `FeedbackPanel`, used by `ComprehensionSessionPage`) depends on them.
 
 ## Logging contract
 

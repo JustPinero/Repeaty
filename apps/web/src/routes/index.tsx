@@ -8,6 +8,7 @@ import { Dashboard } from '@/features/dashboard';
 import { DeckListPage } from '@/features/decks';
 import { ReviewSessionPage } from '@/features/review';
 import { ComprehensionSessionPage } from '@/features/comprehension';
+import CardDetailPage from '@/pages/CardDetail';
 
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { path: 'decks', element: <DeckListPage /> },
       { path: 'decks/:deckId/review', element: <ReviewSessionPage /> },
       { path: 'decks/:deckId/comprehension', element: <ComprehensionSessionPage /> },
+      { path: 'decks/:deckId/cards/:cardId', element: <CardDetailPage /> },
       { path: '*', element: <Navigate to="/app" replace /> },
     ],
   },

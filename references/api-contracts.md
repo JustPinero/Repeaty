@@ -197,6 +197,53 @@ type FlipTierResponse = {
 
 **By design (single-user beta):** an admin can flip any non-self user to any of `{free, pro, admin}` — including elevating another user to admin. This is per the migration body's intentional permissiveness; tighten when Stripe activates DEBT-001.
 
+## `tts-jazh` (Phase-6 maintenance, Pro only — DEBT-003 active)
+
+**Purpose:** OpenAI TTS proxy for Japanese and Mandarin Chinese. Browser SpeechSynthesis quality for ja/zh is inconsistent (ADR-004); this Edge Function returns higher-quality audio for Pro/admin users.
+
+**Auth:** authenticated AND `profiles.tier IN ('pro','admin')`.
+
+**Request:**
+```ts
+type TtsJazhRequest = {
+  text: string;          // ≤ 200 chars
+  lang: 'ja' | 'zh';     // BCP-47 prefix; other langs return 400
+};
+```
+
+**Server-side flow:**
+1. Verify JWT, verify Pro/admin tier (else 403 `FORBIDDEN_TIER`).
+2. Daily cap 100/user via `bump_rate_limit('tts_jazh', 100)`. 429 on raise.
+3. POST to OpenAI `/v1/audio/speech` with `model: 'tts-1'`, env-configurable voice (`OPENAI_TTS_VOICE_JA` / `OPENAI_TTS_VOICE_ZH`, default shimmer/nova), 15s AbortController.
+4. Return `audio/mpeg` bytes (raw, not JSON-wrapped).
+
+**Response:** `Content-Type: audio/mpeg` body; `Cache-Control: public, max-age=86400`.
+
+The web platform adapter (`apps/web/src/platform/web.ts:playTargetText`) short-circuits to this function for ja/zh and falls back to SpeechSynthesis silently on any failure (free-tier 403, rate-limited 429, transport, parse).
+
+## `audio-retention` (Phase-6 maintenance — DEBT-005 active)
+
+**Purpose:** Service-role-only blob cleanup. Companion to migration 0013's `purge_free_tier_audio()` SQL function (which NULLs `pronunciation_attempts.audio_storage_path` for stale free-tier rows); this function actually removes the file blobs from Storage.
+
+**Auth:** **service-role only** (no JWT-bearer path; Supabase blocks direct browser calls). Caller sends `apikey: <SUPABASE_SERVICE_ROLE_KEY>`.
+
+**Server-side flow:**
+1. Verify the apikey header matches the service-role key (else 401).
+2. Reject non-POST (405).
+3. Select up to 1000 stale free-tier rows (`pronunciation_attempts.audio_storage_path IS NOT NULL` AND `created_at < now() - 7 days` AND `profiles.tier = 'free'`).
+4. Batch `supabase.storage.from('pronunciation-audio').remove(paths)` in groups of 100 (the API hard cap).
+5. NULL `audio_storage_path` only for the rows whose blobs successfully removed; failed-path rows stay so the next run can retry.
+
+**Response data:**
+```ts
+type AudioRetentionResponse = {
+  removed_count: number;
+  error_count: number;
+};
+```
+
+**Schedule:** configure in Supabase Dashboard → Database → Cron, daily 03:30 UTC (an hour after the pg_cron job that NULLs paths).
+
 ## Logging contract
 
 Every Edge Function logs one structured line per invocation, JSON to stdout:

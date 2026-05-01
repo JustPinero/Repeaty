@@ -49,6 +49,11 @@ vi.mock('@/features/auth', () => ({
   useAuthUser: () => ({ user: { id: 'u-1', email: 'a@example.com' }, isLoading: false }),
 }));
 
+const enqueueComprehensionMock = vi.fn(async (_payload: unknown) => {});
+vi.mock('@/lib/offline-queue', () => ({
+  enqueueComprehension: (payload: unknown) => enqueueComprehensionMock(payload),
+}));
+
 import { useComprehensionSession } from './useComprehensionSession';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -59,9 +64,9 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const cards = [
-  { id: 'c1', target_text: 'hola', native_text: 'hello', language_code: 'es' },
-  { id: 'c2', target_text: 'gracias', native_text: 'thank you', language_code: 'es' },
-  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', language_code: 'es' },
+  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, language_code: 'es' },
+  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, language_code: 'es' },
+  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, language_code: 'es' },
 ];
 
 describe('useComprehensionSession', () => {
@@ -235,5 +240,39 @@ describe('useComprehensionSession', () => {
     expect(result.current.isComplete).toBe(true);
     expect(result.current.progress.total).toBe(0);
     expect(result.current.currentCard).toBeNull();
+  });
+
+  it('offline: enqueues to the Dexie queue instead of inserting; result.attemptId is null', async () => {
+    const originalOnLine = Object.getOwnPropertyDescriptor(window.navigator, 'onLine');
+    Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
+    try {
+      cardsResult.mockResolvedValue({ data: cards, error: null });
+      enqueueComprehensionMock.mockReset();
+      const { result } = renderHook(() => useComprehensionSession('deck-1'), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      let cardResult: Awaited<ReturnType<typeof result.current.submitResponse>> | undefined;
+      await act(async () => {
+        cardResult = await result.current.submitResponse('hello');
+      });
+
+      expect(enqueueComprehensionMock).toHaveBeenCalledTimes(1);
+      const payload = (enqueueComprehensionMock.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
+      expect(payload.user_id).toBe('u-1');
+      expect(payload.card_id).toBe('c1');
+      expect(typeof payload.response_ms).toBe('number');
+      expect(typeof payload.correct).toBe('boolean');
+
+      // Online insert path NOT exercised.
+      expect(attemptsInsert).not.toHaveBeenCalled();
+
+      // Local UI advances; pendingResult set with attemptId === null so
+      // useFeedback short-circuits to canned-text rather than calling
+      // generate-feedback against a row that doesn't exist server-side.
+      expect(result.current.pendingResult?.cardId).toBe('c1');
+      expect(cardResult?.attemptId).toBeNull();
+    } finally {
+      if (originalOnLine) Object.defineProperty(window.navigator, 'onLine', originalOnLine);
+    }
   });
 });

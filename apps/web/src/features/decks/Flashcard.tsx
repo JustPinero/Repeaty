@@ -5,6 +5,9 @@ import { platform } from '@/platform';
 type Props = {
   targetText: string;
   nativeText: string;
+  /** Phonetic anchor (kana romanization for ja, pinyin with tone marks for zh).
+   * Only rendered when present; non-CJK cards leave this null. */
+  ipa?: string | null;
   exampleTarget?: string;
   exampleNative?: string;
   /** BCP-47 code for TTS playback. When set + platform.canSpeak(), a Play button renders. */
@@ -14,6 +17,7 @@ type Props = {
 export function Flashcard({
   targetText,
   nativeText,
+  ipa,
   exampleTarget,
   exampleNative,
   languageCode,
@@ -70,6 +74,9 @@ export function Flashcard({
         {revealed ? (
           <div className="space-y-2 animate-flip-in">
             <p className="text-xl text-stone-700">{nativeText}</p>
+            {ipa && (
+              <p className="text-sm italic text-stone-500">/{ipa}/</p>
+            )}
             {exampleTarget && (
               <p className="text-sm italic text-stone-600">{exampleTarget}</p>
             )}

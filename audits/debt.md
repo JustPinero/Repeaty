@@ -51,6 +51,8 @@ Format per entry:
 
 ### DEBT-003 — OpenAI TTS for Japanese / Mandarin
 - **Date deferred:** 2026-04-29
+- **Date resolved:** 2026-05-01 (post-launch maintenance pass)
+- **Resolution:** `tts-jazh` Edge Function lands at `supabase/functions/tts-jazh/`. Pro/admin-only, daily cap 100/user via `bump_rate_limit('tts_jazh', 100)`, 200-char text cap, accepts only `lang ∈ {ja, zh}`, returns `audio/mpeg` bytes from OpenAI tts-1 with env-configurable voices (`OPENAI_TTS_VOICE_JA` / `OPENAI_TTS_VOICE_ZH`, default shimmer/nova). Per-request `Deno.serve` JWT-bind for the rate-limit RPC matches the Phase-5 pattern. `apps/web/src/platform/web.ts` `playTargetText` short-circuits to the Edge Function when the lang starts with `ja` or `zh`, plays the returned blob through a transient `<audio>` element, falls back to SpeechSynthesis silently on any failure (free-tier 403, rate-limited 429, transport, parse). In-memory blob cache keyed on `${lang}|${text}` so repeats don't re-call. 11 Deno tests on the handler. ~~_Open_~~
 - **Originating phase / request:** Kickoff (ADR-004)
 - **What was deferred:** Replacing the browser SpeechSynthesis API with OpenAI TTS (or Azure / ElevenLabs) for ja/zh, where browser quality is inconsistent. v1 uses browser TTS for all 7 languages.
 - **Why deferred:** Adds per-call cost. Browser TTS is acceptable for ES/FR/DE/IT/RU and tolerable for ja/zh. Wait for real beta-user feedback (Pro tier feature when activated).
@@ -65,6 +67,8 @@ Format per entry:
 
 ### DEBT-008 — Offline queueing for pronunciation attempts
 - **Date deferred:** 2026-05-01
+- **Date resolved:** 2026-05-01 (post-launch maintenance pass)
+- **Resolution:** Dexie `pending_pronunciation_attempts` table (schema v2) carries the audio Blob + the eventual `uploaded_path`. `enqueuePronunciation` from `apps/web/src/lib/offline-queue.ts` persists; `usePronunciationSession.submitRecording` enqueues when `navigator.onLine === false` and surfaces the typed `OFFLINE_PRONUNCIATION_UNSUPPORTED` error so the page renders "saved offline — your score will land when you're back online" instead of a generic transport-failure UX. `useOfflineReplay`'s new `uploadAndScore` handler is two-staged: (1) upload via `uploadPronunciationBlob` if `uploaded_path` is empty, (2) invoke `score-pronunciation`. On partial failure (upload OK, function call fails) the resolved upload path persists in the queued row so the next attempt skips re-upload. The 5-attempt poison-pill drop applies. 5 new tests on offline-queue.test.ts cover the queue + replay shape; 1 new test on usePronunciationSession.test.ts covers the hook offline branch. ~~_Open_~~
 - **Originating phase / request:** Phase 6 / Request 6.4
 - **What was deferred:** `usePronunciationSession.submitRecording` does NOT enqueue to Dexie when offline — it currently lets the upload fail. Persisting the audio Blob in IndexedDB (Dexie supports it) is straightforward; the replay state machine on reconnect is the harder part because it needs to re-upload to Storage AND re-invoke `score-pronunciation` AND handle 401 re-auth between the two steps without losing the queued blob.
 - **Why deferred:** v1 ships review + comprehension queueing. Pronunciation queueing is a multi-step replay (upload → invoke → write attempt row) where each step has its own failure modes. Beta validation will tell us if Ben actually uses pronunciation offline often enough to justify the extra ~200 LOC of replay state machine.
@@ -76,24 +80,25 @@ Format per entry:
 - **Estimated effort:** M (~1 day).
 - **Reversal pointer:** No code change to revert; activation is additive.
 
-### DEBT-007 — Properly-sized PWA icons + remaining Peaty poses
+### DEBT-007 — Remaining 9 Peaty mascot poses
 - **Date deferred:** 2026-05-01
+- **Status:** partially resolved (2026-05-01 — icon binaries landed; mascot poses still pending image generation).
 - **Originating phase / request:** Phase 6 / Request 6.2
-- **What was deferred:** The PWA manifest at `apps/web/public/manifest.webmanifest` references the existing welcome-pose JPG at `/peaty/peat-start.jpg` with `sizes: any` as a single-icon fallback. Lighthouse PWA installability allows this but the maskable + 192/512 properly-sized PNG variants are required to hit ≥ 90 on the PWA-icon audit. Same for the remaining Peaty poses 2–10 (cheering / thumbs-up / empathy / mic / book / stopwatch / thinking / sleepy / magic) — only Welcome Wave + AI Magic exist in `apps/web/public/peaty/` today.
-- **Why deferred:** Image generation runs outside the codebase (whatever tool Justin uses against the character reference in `assets/peaty/peaty-poses.md`). The manifest + index.html + InstallHint code is in place; only the binary PNGs are missing. Activation = generate the images, drop them into `apps/web/public/peaty/`, update the manifest's `icons` array to the proper-sized entries.
-- **To activate:**
-  1. Generate the 9 missing illustrations + the 192/512/maskable PNG icons + `peaty-splash.jpg` per the table in `references/repeaty-pwa.md` § Mascot.
+- **Partial resolution:** The 192/512/maskable PWA icons are now generated from the existing welcome-pose JPG via `scripts/build-peaty-icons.ts` (sharp-based, palette-encoded for ~78 KB total) and committed to `apps/web/public/peaty/peaty-icon-{192,512,maskable}.png`. `apps/web/public/manifest.webmanifest` carries three `image/png` entries (`purpose: any` for 192/512, `purpose: maskable` for the safe-zone 512). `apps/web/index.html` `<link rel="apple-touch-icon">` points at the 192 PNG. Regenerate via `pnpm build:icons` (root or apps/web). Smoke test at `scripts/build-peaty-icons.test.ts` asserts the committed binaries' dimensions; the script itself is **not** wired into `vite build` — it's manual.
+- **What's still deferred:** The 9 unique mascot poses (`peaty-cheering`, `peaty-thumbs`, `peaty-empathy`, `peaty-mic`, `peaty-book`, `peaty-stopwatch`, `peaty-thinking`, `peaty-sleepy`, `peaty-magic`) plus `peaty-splash.jpg`. Phase-2 / 3 / 4 components still fall back to the welcome-pose JPG as a placeholder.
+- **Why still deferred:** Pose generation needs an external image-gen tool against the character reference in `assets/peaty/peaty-poses.md`. Sharp-based transforms can't synthesize new poses, only resize the existing JPG.
+- **To activate (remaining work):**
+  1. Generate the 9 missing illustrations + `peaty-splash.jpg` per the table in `references/repeaty-pwa.md` § Mascot.
   2. Save each to `assets/peaty/` (design source-of-truth) AND `apps/web/public/peaty/` (served).
-  3. Update `apps/web/public/manifest.webmanifest` with the 192/512/maskable entries.
-  4. Update `apps/web/index.html` apple-touch-icon to point at the 192 PNG.
-  5. Re-run Lighthouse → confirm PWA installability section is fully green.
-  6. Phase-2 / 3 / 4 components currently using `peat-start.jpg` placeholder may swap to their dedicated poses (PeatyGreeting / Flashcard / Comprehension / Pronunciation headers).
-- **Estimated effort:** S (≤ 0.5 day, almost all in image generation).
+  3. Phase-2 / 3 / 4 components currently using `peat-start.jpg` placeholder swap to their dedicated poses (PeatyGreeting / Flashcard / Comprehension / Pronunciation headers).
+  4. Re-run Lighthouse to confirm PWA installability is still green (icons landed in this partial; this step is to verify the pose swap didn't regress anything).
+- **Estimated effort:** S (remaining, ≤ 0.5 day, almost all in image generation).
 - **Reversal pointer:** No code change to revert; activation is additive.
 
 ### DEBT-006 — `pronunciation-session` E2E flow
 - **Date deferred:** 2026-05-01
 - **Originating phase / request:** Phase 4 audit gate / chore(5.0)
+- **Status:** **STILL OPEN.** Resolution attempt 1 (Hypothesis B — explicit waits for `/app` URL + `Your decks` heading) shipped on debt-cleanup branch; CI surfaced a second race (MicCapture's `requesting → recording` transition not visible within 10s of the Record click) underneath it, so the manifest was reverted to `in-progress`. The next attempt needs Hypothesis A (same-app link click via the dashboard) AND a `data-testid` / aria signal on MicCapture's recording state.
 - **What was deferred:** Flipping `pronunciation-session` to `complete` in `e2e-manifest.json`. The launchOptions args (`--use-fake-device-for-media-stream` + `--use-fake-ui-for-media-stream`) and the spec body (Stop click → score panel) are wired and run locally, but the `/app/decks` step in the spec — clicking the "Pronunciation practice" link — is flaky in CI: the bundled-decks query hasn't settled by the time the locator times out at 15s. Likely a post-onboarding auth-context-hydration race when the navigation is `page.goto('/app/decks')` rather than a same-app link click.
 - **Why deferred:** chore(5.0) bundled six other audit-deferred fixes; chasing the deck-list race without a CI trace artifact would have stalled the bundle. Reverting the manifest flip is the minimal safe move.
 - **To activate:**
@@ -107,6 +112,7 @@ Format per entry:
 ### DEBT-005 — Free-tier audio file blob cleanup
 - **Date deferred:** 2026-04-30
 - **Originating phase / request:** Phase 4 / Request 4.6
+- **Resolution:** Edge Function `audio-retention` lands at `supabase/functions/audio-retention/`. Service-role-only (no browser path). Batches storage `remove()` in 100s, nulls paths for rows whose blobs successfully removed (failed-path rows stay for the next run to retry), structured-JSON log per call. Schedule: configure in the Supabase Dashboard → Database → Cron, daily 03:30 UTC (an hour after the existing `audio-retention-daily` pg_cron job that NULLs the paths). 7 Deno tests cover the contract. ~~_Resolution recap._~~
 - **What was deferred:** Removing the underlying file blob from Supabase Storage when the daily retention job reaps a free-tier audio recording. The current `purge_free_tier_audio()` SQL function only NULLs `pronunciation_attempts.audio_storage_path`; the user-visible privacy property holds (no row references the audio, so the Play button disappears) but the file itself stays in `storage.objects`. Recent Supabase versions block direct `DELETE FROM storage.objects` from any role with a trigger ("Direct deletion from storage tables is not allowed. Use the Storage API instead.").
 - **Why deferred:** The Storage API is HTTP-only — calling it from a SQL cron means adding `pg_net` (or equivalent) plus serializing the per-row HTTP DELETEs. Edge-Function path needs Supabase Cron schedule wiring outside the migration tree. Either is bigger than the 4.6 budget, and the v1 user-facing privacy property is satisfied by the path NULLing on schedule.
 - **To activate:**

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { bucket as scoreBucket, type ScoreBucket } from '@repeaty/shared';
 import { supabase } from '@/lib/supabase';
+import { enqueuePronunciation } from '@/lib/offline-queue';
 import { useAuthUser } from '@/features/auth';
 import { uploadPronunciationBlob } from './storage';
 
@@ -40,9 +41,20 @@ export type PronunciationSessionState = {
 };
 
 export const DECK_NOT_FOUND = 'DECK_NOT_FOUND';
+/** Offline pronunciation: the audio Blob + card_id are enqueued via
+ * `enqueuePronunciation` (DEBT-008 active), and the useOfflineReplay
+ * hook re-uploads + re-invokes score-pronunciation on reconnect. The UI
+ * surface throws this typed error so the page can render a "saved
+ * offline — your score will land when you're back online" message
+ * rather than advancing through a missing pendingResult. */
+export const OFFLINE_PRONUNCIATION_UNSUPPORTED = 'OFFLINE_PRONUNCIATION_UNSUPPORTED';
 
 export function isDeckNotFoundError(error: unknown): boolean {
   return error instanceof Error && error.message === DECK_NOT_FOUND;
+}
+
+export function isOfflinePronunciationError(error: unknown): boolean {
+  return error instanceof Error && error.message === OFFLINE_PRONUNCIATION_UNSUPPORTED;
 }
 
 type EdgeBody<T> =
@@ -111,6 +123,22 @@ export function usePronunciationSession(deckId: string): PronunciationSessionSta
       if (submittingRef.current) {
         if (pendingResult) return pendingResult;
         throw new Error('submission already in flight');
+      }
+      // Offline path: enqueue the audio Blob + card_id for replay on
+      // reconnect. The two-stage replay state machine (upload → invoke
+      // score-pronunciation, with `uploaded_path` persisted between
+      // attempts to avoid double-upload) lives in
+      // `apps/web/src/lib/{offline-queue,useOfflineReplay}.ts`.
+      // The page surface throws this typed error and renders a
+      // "saved offline — your score will land when you're back online"
+      // message rather than trying to advance through pendingResult.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueuePronunciation({
+          user_id: userId,
+          card_id: currentCard.id,
+          audio_blob: blob,
+        });
+        throw new Error(OFFLINE_PRONUNCIATION_UNSUPPORTED);
       }
       submittingRef.current = true;
       try {

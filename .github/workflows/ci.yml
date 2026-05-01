@@ -95,6 +95,15 @@ jobs:
           else
             echo "package.json not yet present — skipping build (Phase 1.1)"
           fi
+      - name: Bundle-size budget (< 500 KB gz)
+        # Only runs after a successful build; the script itself short-
+        # circuits if dist/ is missing (returns 1).
+        run: |
+          if [ -d "apps/web/dist/assets" ]; then
+            pnpm build:size
+          else
+            echo "no apps/web/dist/assets — bundle-size check skipped"
+          fi
 
   # ─── Supabase migrations + integration tests + applicable E2E ───────────────
   # Combined into one job because every Repeaty flow needs both a live Supabase

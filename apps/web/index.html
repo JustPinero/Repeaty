@@ -6,8 +6,9 @@
     <meta name="theme-color" content="#7bbf3a" />
     <meta name="description" content="Repeat after Peaty — flashcards, comprehension drills, and pronunciation feedback in one place." />
 
-    <!-- PWA manifest. The 192/512/maskable PNG icons land in 6.5 alongside
-         the Lighthouse pass; v1 uses the welcome-pose JPG as a fallback. -->
+    <!-- PWA manifest. 192/512/maskable PNG icons generated from the
+         welcome-pose JPG via `pnpm build:icons`
+         (see scripts/build-peaty-icons.ts). -->
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- iOS Safari has no `beforeinstallprompt`; these meta tags + the
@@ -16,7 +17,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Repeaty" />
-    <link rel="apple-touch-icon" href="/peaty/peat-start.jpg" />
+    <link rel="apple-touch-icon" href="/peaty/peaty-icon-192.png" />
 
     <title>Repeaty</title>
   </head>

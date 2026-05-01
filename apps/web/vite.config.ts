@@ -25,6 +25,14 @@ export default defineConfig({
       workbox: {
         // Precache hashed JS/CSS/HTML at install time.
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // Workbox's default file-size cap is 2 MB, which is too tight once
+        // Peaty illustrations + future bundled deck JSON (e.g. Phase 7+ ja/zh
+        // expansion sets) join the precache list — a single oversized asset
+        // would silently drop from the SW manifest and the page would 404 on
+        // first offline load. 5 MB is the headroom we're willing to own per
+        // file; anything larger should be lazy-loaded or runtime-cached, not
+        // precached. See `references/deployment-landmines.md` § Bundle size.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             // Peaty illustrations.

@@ -5,6 +5,7 @@ import { FeedbackPanel } from '@/features/feedback';
 import { MicCapture } from './MicCapture';
 import {
   isDeckNotFoundError,
+  isOfflinePronunciationError,
   usePronunciationSession,
 } from './usePronunciationSession';
 
@@ -20,17 +21,29 @@ export function PronunciationSessionPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const session = usePronunciationSession(deckId ?? '');
   const [submitting, setSubmitting] = useState(false);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
 
-  // Reset MicCapture when the card changes — keying via cardId on <MicCapture />.
+  // Reset MicCapture + per-recording error when the card changes.
   useEffect(() => {
     setSubmitting(false);
+    setRecordingError(null);
   }, [session.currentCard?.id]);
 
   async function handleRecorded(blob: Blob) {
     if (submitting) return;
     setSubmitting(true);
+    setRecordingError(null);
     try {
       await session.submitRecording(blob);
+    } catch (err) {
+      const isOffline = isOfflinePronunciationError(err);
+      setRecordingError(
+        isOffline
+          ? 'Saved offline. Your score will land when you\'re back online.'
+          : err instanceof Error
+            ? err.message
+            : 'Recording failed. Try again.',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -145,10 +158,21 @@ export function PronunciationSessionPage() {
               )}
             </div>
           ) : (
-            <MicCapture
-              key={session.currentCard?.id ?? 'no-card'}
-              onRecorded={handleRecorded}
-            />
+            <div className="flex flex-col items-center gap-3">
+              <MicCapture
+                key={session.currentCard?.id ?? 'no-card'}
+                onRecorded={handleRecorded}
+                onReset={() => setRecordingError(null)}
+              />
+              {recordingError && (
+                <p
+                  role="alert"
+                  className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                >
+                  {recordingError}
+                </p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

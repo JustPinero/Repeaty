@@ -96,6 +96,7 @@ export default function ReviewSessionPage() {
         <Flashcard
           targetText={session.currentCard.target_text}
           nativeText={session.currentCard.native_text}
+          ipa={session.currentCard.ipa}
           exampleTarget={session.currentCard.example_sentence_target ?? undefined}
           exampleNative={session.currentCard.example_sentence_native ?? undefined}
           languageCode={session.currentCard.language_code}

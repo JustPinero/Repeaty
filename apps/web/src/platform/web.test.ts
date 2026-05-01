@@ -1,4 +1,16 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+
+// `@/lib/supabase` runs `loadEnv` at module load — that crashes in jsdom
+// without VITE_SUPABASE_URL set. The Pro-tier ja/zh TTS path now imports
+// it; mock so the module loads under test.
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    },
+  },
+}));
+
 import { webPlatform } from './web';
 
 describe('webPlatform.playTargetText', () => {

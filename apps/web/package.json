@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:size": "bash ../../scripts/build-size-report.sh",
+    "build:icons": "pnpm -w build:icons",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run",

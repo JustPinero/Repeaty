@@ -21,8 +21,10 @@ Set with `supabase secrets set KEY=VALUE` for cloud envs. Never `VITE_`-prefixed
 | `SUPABASE_URL`               | Supabase project URL — server-side mirror of `VITE_SUPABASE_URL`         | Edge Functions                                            | Auto-injected by Supabase's Edge Function runtime; do not set manually. Read by `validateEnv()` at function boot. |
 | `SUPABASE_ANON_KEY`          | Supabase anon JWT — server-side mirror used to construct user-context (RLS-respecting) clients inside Edge Functions | Edge Functions                                            | Auto-injected by Supabase's Edge Function runtime; do not set manually. Distinct from `SUPABASE_SERVICE_ROLE_KEY`. |
 | `SUPABASE_SERVICE_ROLE_KEY`  | Full DB access, bypasses RLS                                             | Edge Functions, admin scripts                             | If this leaks, rotate immediately + audit `pg_stat_activity` for misuse        |
-| `OPENAI_API_KEY`             | OpenAI API key (Whisper)                                                 | `score-pronunciation` Edge Function                       | Format prefix `sk-`; `/pre-deploy` validates the prefix                        |
+| `OPENAI_API_KEY`             | OpenAI API key (Whisper + ja/zh TTS)                                     | `score-pronunciation`, `tts-jazh` Edge Functions          | Format prefix `sk-`; `/pre-deploy` validates the prefix                        |
 | `ANTHROPIC_API_KEY`          | Anthropic API key (Claude)                                               | `generate-lesson`, `generate-feedback`                    | Format prefix `sk-ant-`; `/pre-deploy` validates the prefix                    |
+| `OPENAI_TTS_VOICE_JA`        | OpenAI tts-1 voice for Japanese (default `shimmer`)                       | `tts-jazh` (optional)                                     | One of: alloy, echo, fable, onyx, nova, shimmer. DEBT-003 active.              |
+| `OPENAI_TTS_VOICE_ZH`        | OpenAI tts-1 voice for Mandarin (default `nova`)                          | `tts-jazh` (optional)                                     | Same set. Distinct from JA so users studying both hear different voices.       |
 
 ## Local development
 

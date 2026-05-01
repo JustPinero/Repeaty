@@ -172,6 +172,12 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ts-fsrs (in `@repeaty/shared`)       | ^4.7.1     | FSRS-4.7+ scheduler engine wrapped by `@repeaty/shared/fsrs`. Pinned to ^4.7.1 (the version we validate against) rather than ^4.5.0 to avoid silent behavioral upgrades on fresh installs. | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
 | vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
 
+### Installed in Request 5.3 (generate-feedback Edge Function)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| zod (in `@repeaty/shared`)           | ^3.23.8    | Output schema for `feedback-prompt.ts` (Claude-response Zod parse). Was already a transitive dep of `apps/web`; promoted to direct because the shared module imports it. | (n/a) | (already in tree)     |
+
 ### Installed in Request 2.3 (shadcn primitives + flashcard UI)
 
 shadcn/ui itself is copy-paste rather than a runtime dep — components live in `apps/web/src/components/ui/` (Button, Card, button-variants). The runtime libraries the primitives depend on are below.

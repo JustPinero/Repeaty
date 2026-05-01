@@ -129,6 +129,37 @@ describe('CardPronunciationHistory', () => {
     });
   });
 
+  it('renders the Load more button at exactly pageSize results', async () => {
+    const rows = Array.from({ length: 5 }, (_, i) => ({
+      id: `a${i}`,
+      similarity_score: 0.5,
+      whisper_transcript: 't',
+      audio_storage_path: null,
+      created_at: '2026-04-01T00:00:00Z',
+    }));
+    setSelect(rows);
+    renderWithClient(<CardPronunciationHistory cardId="card-1" pageSize={5} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /load more/i })).toBeInTheDocument();
+    });
+  });
+
+  it('does not render Load more when fewer results than pageSize', async () => {
+    const rows = Array.from({ length: 2 }, (_, i) => ({
+      id: `a${i}`,
+      similarity_score: 0.5,
+      whisper_transcript: 't',
+      audio_storage_path: null,
+      created_at: '2026-04-01T00:00:00Z',
+    }));
+    setSelect(rows);
+    renderWithClient(<CardPronunciationHistory cardId="card-1" pageSize={5} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('card-pronunciation-history')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /load more/i })).toBeNull();
+  });
+
   it('renders an error message on query failure', async () => {
     setSelect([], { message: 'rls denied' });
     renderWithClient(<CardPronunciationHistory cardId="card-1" />);

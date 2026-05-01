@@ -19,6 +19,17 @@ vi.mock('@/lib/supabase', () => ({
 
 vi.mock('@/features/auth', () => ({
   useAuthUser: () => useAuthUserMock(),
+  useProfile: () => ({
+    profile: {
+      id: 'u-1',
+      display_name: 'Ben',
+      email: 'ben@example.com',
+      native_language_code: 'en-US',
+      tier: 'free',
+      is_admin: false,
+    },
+    isLoading: false,
+  }),
 }));
 
 // Stub the ReviewQueue (it has its own tests). This keeps the Dashboard

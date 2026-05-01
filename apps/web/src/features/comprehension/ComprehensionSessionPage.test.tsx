@@ -13,6 +13,10 @@ vi.mock('./useComprehensionSession', () => ({
     error instanceof Error && error.message === 'DECK_NOT_FOUND',
 }));
 
+vi.mock('@/features/feedback', () => ({
+  FeedbackPanel: () => React.createElement('div', { 'data-testid': 'feedback-panel' }),
+}));
+
 import ComprehensionSessionPage from './ComprehensionSessionPage';
 
 function renderAt(path: string) {

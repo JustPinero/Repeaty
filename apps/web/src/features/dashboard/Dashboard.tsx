@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuthUser } from '@/features/auth';
+import { Link } from 'react-router-dom';
+import { useAuthUser, useProfile } from '@/features/auth';
 import { supabase } from '@/lib/supabase';
 import { Header } from './Header';
 import { PeatyGreeting } from './PeatyGreeting';
@@ -13,6 +14,8 @@ type DashboardData = {
 
 export default function Dashboard() {
   const { user } = useAuthUser();
+  const { profile } = useProfile();
+  const isPro = profile?.tier === 'pro' || profile?.tier === 'admin';
 
   const { data, isError, error, refetch } = useQuery({
     queryKey: ['dashboard', user?.id],
@@ -60,6 +63,20 @@ export default function Dashboard() {
               </div>
             )}
             <ReviewQueue />
+            {isPro && (
+              <div className="rounded-xl border border-peaty-green/30 bg-peaty-green/5 p-4 text-center">
+                <p className="text-sm font-medium text-peaty-green">Pro feature</p>
+                <p className="mt-1 text-sm text-stone-700">
+                  Generate a custom lesson tailored to your weak spots.
+                </p>
+                <Link
+                  to="/app/generate"
+                  className="mt-3 inline-block rounded bg-peaty-green px-3 py-1.5 text-sm font-medium text-white hover:bg-peaty-green/90"
+                >
+                  Generate a lesson
+                </Link>
+              </div>
+            )}
           </>
         )}
       </main>

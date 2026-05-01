@@ -1,6 +1,6 @@
 # API Contracts — Repeaty Edge Functions
 
-Three Edge Functions, each with one responsibility. All require a valid Supabase JWT in `Authorization: Bearer <token>`. Service-role calls bypass auth (used by cron and admin scripts only — never callable from the browser).
+Four Edge Functions, each with one responsibility. All require a valid Supabase JWT in `Authorization: Bearer <token>`. Service-role calls bypass auth (used by cron and admin scripts only — never callable from the browser).
 
 ## Common shape
 
@@ -19,18 +19,23 @@ HTTP status mirrors the error class:
 | 200    | Success                                                          |
 | 400    | Validation failure (Zod parse failed on request body)            |
 | 401    | Missing or invalid JWT                                           |
-| 403    | Authenticated but not authorized (e.g. free user hitting Pro fn) |
+| 403    | Authenticated but not authorized (tier-gated OR cross-resource — see `code`) |
 | 404    | Referenced resource not found (e.g. `card_id` doesn't exist)    |
 | 429    | Per-user rate limit exceeded                                     |
 | 500    | Unexpected server error                                          |
 | 504    | Upstream API (Whisper / Claude) timeout (15s AbortController)   |
 
-Error `code` strings (string enum, defined in `packages/shared/src/edge-errors.ts`):
+Error `code` strings (string enum, defined in `packages/shared/src/edge-errors.ts` and mirrored in `supabase/functions/_shared/edge-errors.ts`):
 
 ```
-INVALID_PAYLOAD | UNAUTHENTICATED | FORBIDDEN_TIER | NOT_FOUND |
-RATE_LIMITED | UPSTREAM_TIMEOUT | UPSTREAM_FAILED | INTERNAL
+INVALID_PAYLOAD | UNAUTHENTICATED | FORBIDDEN_TIER | FORBIDDEN_RESOURCE |
+NOT_FOUND | RATE_LIMITED | UPSTREAM_TIMEOUT | UPSTREAM_FAILED | INTERNAL
 ```
+
+Both 403 codes share an HTTP status; callers must branch on the `code`:
+
+- `FORBIDDEN_TIER` — caller is on the wrong tier for this Edge Function (free user hitting `generate-lesson` / `generate-feedback`). UI prompt: upgrade.
+- `FORBIDDEN_RESOURCE` — caller is on the right tier but is asking about a resource they don't own (e.g. an `audio_storage_path` that doesn't begin with their `user_id`). UI prompt: a generic "you can't access this" — not an upgrade flow.
 
 ## Non-Edge-Function operations
 
@@ -62,7 +67,7 @@ type ScorePronunciationRequest = {
 **Server-side flow:**
 1. Verify JWT → `user_id`.
 2. Load card by `card_id` (RLS-respecting). 404 if not visible.
-3. Verify `audio_storage_path` starts with `${user_id}/` (path-traversal guard).
+3. Verify `audio_storage_path`'s first `/`-segment equals the caller's `user_id` and the path has at least three segments (path-traversal guard; matches the bucket's `(storage.foldername(name))[1]` policy). Returns `403 FORBIDDEN_RESOURCE` on failure.
 4. Download audio from Storage.
 5. POST to OpenAI Whisper (`/v1/audio/transcriptions`) with `language: card.language_code` and 15s AbortController.
 6. Compute `similarity_score` via normalized Levenshtein on a Unicode-normalized (NFC + casefold) version of transcript vs `card.target_text`.
@@ -154,9 +159,43 @@ type GenerateFeedbackResponse = {
 };
 ```
 
-### Phase-3 stub bridge
+> **Note (Phase 5.4 swap, landed):** The Phase-3 canned-text body of `useFeedback` was replaced with a `useQuery` call to this Edge Function in 5.4. The public hook types — `FeedbackInput` (`{ kind, bucket, targetText, nativeText, userResponse, nativeLanguageCode, attemptId? }`) and `FeedbackResult` (`{ text: string | null, isLoading: boolean }`) — were preserved (additive `attemptId`). `apps/web/src/features/feedback/canned-text.ts` is now a fallback used only on free-tier, perfect-bucket, missing `attemptId`, or transport / 429 / timeout cases — not the primary path.
 
-Until Phase 5 lands, the client uses `apps/web/src/features/feedback/useFeedback.ts` — a synchronous canned-text lookup keyed on `(bucket, native-language-prefix)` (table in `apps/web/src/features/feedback/canned-text.ts`). The hook's public types — `FeedbackInput` (`{ kind, bucket, targetText, nativeText, userResponse, nativeLanguageCode }`) and `FeedbackResult` (`{ text: string | null, isLoading: boolean }`) — will be preserved when the body swaps to a `useQuery`-backed call to this Edge Function. **Don't change the public hook types during the Phase-5 swap without coordinating** — every callsite (currently `FeedbackPanel`, used by `ComprehensionSessionPage`) depends on them.
+## `flip-tier` (Phase 5, admin only)
+
+**Purpose:** flip another user's `profiles.tier` (and write a `tier_change_log` audit row) from the in-app `/admin` route. Manual replacement for Stripe billing per [DEBT-001](../audits/debt.md).
+
+**Auth:** authenticated AND `profiles.is_admin = true`. The Edge Function verifies the JWT; the SECURITY DEFINER `flip_tier` SQL RPC enforces the admin check + self-flip guard atomically.
+
+**Request:**
+```ts
+type FlipTierRequest = {
+  target_user_id: string;             // UUID; must NOT equal caller's auth.uid()
+  new_tier: 'free' | 'pro' | 'admin'; // CHECK-constrained server-side
+  reason?: string;                    // ≤ 500 chars; persisted to tier_change_log.reason
+};
+```
+
+**Server-side flow:**
+1. Verify JWT → caller's `user_id`.
+2. Zod-parse the body (400 INVALID_PAYLOAD on failure).
+3. Call `flip_tier(target_user_id, new_tier, reason)` under the *user* JWT (so SECURITY DEFINER's `auth.uid()` resolves to the actor inside the admin check).
+4. Map RPC raise messages back to Edge error codes:
+   - `NOT_ADMIN` → 403 `FORBIDDEN_TIER`
+   - `SELF_FLIP_FORBIDDEN` → 403 `FORBIDDEN_RESOURCE`
+   - `TARGET_NOT_FOUND` → 404 `NOT_FOUND`
+   - `NO_CHANGE` / `INVALID_TIER` → 400 `INVALID_PAYLOAD`
+   - `UNAUTHENTICATED` → 401
+5. Return the inserted `tier_change_log.id` for audit-trail correlation.
+
+**Response data:**
+```ts
+type FlipTierResponse = {
+  log_id: string;                     // tier_change_log.id of the inserted audit row
+};
+```
+
+**By design (single-user beta):** an admin can flip any non-self user to any of `{free, pro, admin}` — including elevating another user to admin. This is per the migration body's intentional permissiveness; tighten when Stripe activates DEBT-001.
 
 ## Logging contract
 

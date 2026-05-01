@@ -108,7 +108,7 @@ Deno.test('returns 404 when card is not visible to the caller', async () => {
   assertEquals(body.error.code, 'NOT_FOUND');
 });
 
-Deno.test('returns 403 when audio path does not start with user_id', async () => {
+Deno.test('returns 403 FORBIDDEN_RESOURCE when audio path does not start with user_id', async () => {
   const handler = createHandler(happyDeps());
   const req = buildRequest({
     card_id: FAKE_CARD,
@@ -117,9 +117,7 @@ Deno.test('returns 403 when audio path does not start with user_id', async () =>
   const res = await handler(req);
   assertEquals(res.status, 403);
   const body = await res.json();
-  // FORBIDDEN_TIER is the closest semantic match in the shared enum even though
-  // this is path-traversal, not tier — handler maps to it deliberately.
-  assertEquals(body.error.code, 'FORBIDDEN_TIER');
+  assertEquals(body.error.code, 'FORBIDDEN_RESOURCE');
 });
 
 Deno.test('returns 403 for prefix-collision paths (would have passed startsWith)', async () => {
@@ -180,14 +178,15 @@ Deno.test('happy path — inserts attempt, computes similarity, logs', async () 
   let transcribedLang = '';
   let inserted: Record<string, unknown> = {};
   const deps = happyDeps({
-    transcribeAudio: async (args) => {
+    transcribeAudio: async (args: TranscribeArgs) => {
       transcribedLang = args.language;
       return 'Hola.';
     },
-    insertAttempt: async (row) => {
+    insertAttempt: async (row: AttemptRow) => {
       inserted = row as unknown as Record<string, unknown>;
       return { id: '00000000-0000-0000-0000-00000000a111' };
     },
+    estimateWhisperCostUsd: (_size: number) => 0.0042,
   });
   const handler = createHandler(deps);
   const req = buildRequest({ card_id: FAKE_CARD, audio_storage_path: FAKE_PATH });
@@ -215,6 +214,33 @@ Deno.test('happy path — inserts attempt, computes similarity, logs', async () 
   assertEquals(logLine.status, 200);
   assertEquals(typeof logLine.latency_ms, 'number');
   assertEquals(typeof logLine.request_id, 'string');
+  assertEquals(logLine.cost_estimate_usd, 0.0042);
+});
+
+Deno.test('error paths log cost_estimate_usd: null', async () => {
+  const deps = happyDeps({
+    getCardForUser: (_cardId: string, _jwt: string) => Promise.resolve(null),
+    estimateWhisperCostUsd: (_size: number) => 0.0042,
+  });
+  const handler = createHandler(deps);
+  const req = buildRequest({ card_id: FAKE_CARD, audio_storage_path: FAKE_PATH });
+  await handler(req);
+
+  const logs = (deps as unknown as { __logs: object[] }).__logs;
+  const logLine = logs[0] as Record<string, unknown>;
+  assertEquals(logLine.cost_estimate_usd, null);
+});
+
+Deno.test('returns 400 INVALID_PAYLOAD when audio blob exceeds the 10MB cap', async () => {
+  const huge = new Blob([new Uint8Array(11 * 1024 * 1024)], { type: 'audio/webm' });
+  const handler = createHandler(
+    happyDeps({ downloadAudio: (_p: string) => Promise.resolve(huge) }),
+  );
+  const req = buildRequest({ card_id: FAKE_CARD, audio_storage_path: FAKE_PATH });
+  const res = await handler(req);
+  assertEquals(res.status, 400);
+  const body = await res.json();
+  assertEquals(body.error.code, 'INVALID_PAYLOAD');
 });
 
 Deno.test('logs and returns 502 when downloadAudio returns null', async () => {

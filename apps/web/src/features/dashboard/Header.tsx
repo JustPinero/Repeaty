@@ -1,12 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useProfile } from '@/features/auth';
 
 type Props = {
   displayName: string | null;
 };
 
 export function Header({ displayName }: Props) {
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -31,6 +33,14 @@ export function Header({ displayName }: Props) {
         <span aria-label="Signed in as" className="text-sm text-stone-600">
           {displayName ?? 'You'}
         </span>
+        {profile?.is_admin && (
+          <Link
+            to="/app/admin"
+            className="rounded border border-stone-300 px-3 py-1 text-sm font-medium text-stone-700 hover:bg-stone-100"
+          >
+            Admin
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => void handleSignOut()}

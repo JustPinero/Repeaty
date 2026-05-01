@@ -147,6 +147,7 @@ export default function ComprehensionSessionPage() {
                 nativeText={session.currentCard?.native_text ?? ''}
                 userResponse={result.response}
                 nativeLanguageCode={NATIVE_LANG_PLACEHOLDER}
+                attemptId={result.attemptId ?? undefined}
               />
               {session.currentCard && (
                 <Link

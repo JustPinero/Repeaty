@@ -34,3 +34,20 @@ export {
   type EdgeSuccessBody,
   type EdgeResponseBody,
 } from './edge-errors';
+export {
+  type FeedbackKind,
+  type ComprehensionAttempt,
+  type PronunciationAttempt,
+  type FeedbackPromptInput,
+  type FeedbackOutput,
+  FeedbackOutputSchema,
+  buildFeedbackPrompt,
+  stripFence,
+} from './feedback-prompt';
+export {
+  type LessonCard,
+  type LessonOutput,
+  type LessonPromptInput,
+  LessonOutputSchema,
+  buildLessonPrompt,
+} from './lesson-prompt';

@@ -69,11 +69,22 @@ test.describe('@phase-4 pronunciation-session', () => {
     const recordBtn = page.getByRole('button', { name: /start recording/i });
     await expect(recordBtn).toBeVisible();
 
-    // Mic capture is non-trivial to drive without the fake-device launch flags.
-    // The current run leaves the manifest at `in-progress` — flipping to
-    // `complete` will require: (1) launchOptions args for fake media stream,
-    // (2) a small wait for `recording` state, (3) Stop click, (4) assertion on
-    // /97/100/. Until then, the visible Record button confirms the route +
-    // page mounted correctly with the bundled-deck data.
+    // Record. With the playwright.config.ts fake-device flags, getUserMedia
+    // resolves to a synthesised stream and `--use-fake-ui-for-media-stream`
+    // auto-grants the permission prompt.
+    await recordBtn.click();
+
+    // Wait for the state machine to transition into 'recording'.
+    const stopBtn = page.getByRole('button', { name: /stop recording/i });
+    await expect(stopBtn).toBeVisible({ timeout: 10_000 });
+
+    // Stop → onRecorded → submitRecording → uploadPronunciationBlob (route
+    // mock) → score-pronunciation Edge Function (route mock) → pendingResult.
+    await stopBtn.click();
+
+    // The result panel renders the score we mocked (97).
+    await expect(page.getByText(/97\s*\/\s*100/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('link', { name: /view card history/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^next$/i })).toBeVisible();
   });
 });

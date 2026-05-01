@@ -222,6 +222,34 @@ describe('usePronunciationSession', () => {
     expect(result.current.progress.averageScore).toBe(95);
   });
 
+  it('rejects a second concurrent submitRecording (re-entrancy guard)', async () => {
+    setupSupabase();
+    uploadMock.mockImplementation(
+      () =>
+        new Promise<string>((r) => setTimeout(() => r('user-aaa/card-1/x.webm'), 50)),
+    );
+    const { result } = renderHook(() => usePronunciationSession('deck-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let firstResolved: unknown;
+    await act(async () => {
+      const a = result.current.submitRecording(FAKE_BLOB);
+      // Attach the .catch synchronously — the second call rejects before the
+      // first resolves, and an unhandled rejection between then and `await b`
+      // would be flagged by vitest as a test failure.
+      const b = result.current.submitRecording(FAKE_BLOB).catch(() => undefined);
+      firstResolved = await a;
+      await b;
+    });
+
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+    expect(result.current.pendingResult).not.toBeNull();
+    expect(firstResolved).toBeDefined();
+  });
+
   it('isComplete=true and total=0 when the deck has no cards', async () => {
     setupSupabase({ cards: [] });
     const { result } = renderHook(() => usePronunciationSession('deck-1'), {

@@ -89,6 +89,14 @@ const deps: HandlerDeps = {
     return { id: data.id };
   },
 
+  estimateWhisperCostUsd(audioSize: number) {
+    // Whisper is $0.006/minute. Opus at ~64 kbps ≈ 8 KB/sec, so size/8192
+    // approximates duration in seconds. Coarse but useful — actual duration
+    // would require decoding. Rounded to 6 decimals for log readability.
+    const seconds = audioSize / 8192;
+    return Number(((seconds / 60) * 0.006).toFixed(6));
+  },
+
   now: () => Date.now(),
 
   log(line) {

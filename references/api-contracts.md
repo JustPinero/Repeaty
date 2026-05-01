@@ -19,18 +19,23 @@ HTTP status mirrors the error class:
 | 200    | Success                                                          |
 | 400    | Validation failure (Zod parse failed on request body)            |
 | 401    | Missing or invalid JWT                                           |
-| 403    | Authenticated but not authorized (e.g. free user hitting Pro fn) |
+| 403    | Authenticated but not authorized (tier-gated OR cross-resource — see `code`) |
 | 404    | Referenced resource not found (e.g. `card_id` doesn't exist)    |
 | 429    | Per-user rate limit exceeded                                     |
 | 500    | Unexpected server error                                          |
 | 504    | Upstream API (Whisper / Claude) timeout (15s AbortController)   |
 
-Error `code` strings (string enum, defined in `packages/shared/src/edge-errors.ts`):
+Error `code` strings (string enum, defined in `packages/shared/src/edge-errors.ts` and mirrored in `supabase/functions/_shared/edge-errors.ts`):
 
 ```
-INVALID_PAYLOAD | UNAUTHENTICATED | FORBIDDEN_TIER | NOT_FOUND |
-RATE_LIMITED | UPSTREAM_TIMEOUT | UPSTREAM_FAILED | INTERNAL
+INVALID_PAYLOAD | UNAUTHENTICATED | FORBIDDEN_TIER | FORBIDDEN_RESOURCE |
+NOT_FOUND | RATE_LIMITED | UPSTREAM_TIMEOUT | UPSTREAM_FAILED | INTERNAL
 ```
+
+Both 403 codes share an HTTP status; callers must branch on the `code`:
+
+- `FORBIDDEN_TIER` — caller is on the wrong tier for this Edge Function (free user hitting `generate-lesson` / `generate-feedback`). UI prompt: upgrade.
+- `FORBIDDEN_RESOURCE` — caller is on the right tier but is asking about a resource they don't own (e.g. an `audio_storage_path` that doesn't begin with their `user_id`). UI prompt: a generic "you can't access this" — not an upgrade flow.
 
 ## Non-Edge-Function operations
 
@@ -62,7 +67,7 @@ type ScorePronunciationRequest = {
 **Server-side flow:**
 1. Verify JWT → `user_id`.
 2. Load card by `card_id` (RLS-respecting). 404 if not visible.
-3. Verify `audio_storage_path` starts with `${user_id}/` (path-traversal guard).
+3. Verify `audio_storage_path`'s first `/`-segment equals the caller's `user_id` and the path has at least three segments (path-traversal guard; matches the bucket's `(storage.foldername(name))[1]` policy). Returns `403 FORBIDDEN_RESOURCE` on failure.
 4. Download audio from Storage.
 5. POST to OpenAI Whisper (`/v1/audio/transcriptions`) with `language: card.language_code` and 15s AbortController.
 6. Compute `similarity_score` via normalized Levenshtein on a Unicode-normalized (NFC + casefold) version of transcript vs `card.target_text`.

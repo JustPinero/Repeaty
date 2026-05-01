@@ -28,6 +28,11 @@ export function CardPronunciationHistory({ cardId, pageSize = 20 }: Props) {
   const { data, isLoading, isError, error } = useQuery<Attempt[], Error>({
     queryKey: ['card-pronunciation-history', cardId, userId, limit],
     enabled: !!userId && !!cardId,
+    // 1-min stale window keeps the cache below TanStack Query's default
+    // 5-min gcTime: when DEBT-005 lands and the retention reaper actually
+    // removes file blobs, a stale cached row would otherwise still render
+    // a Play button that 404s on the signed-URL GET.
+    staleTime: 60_000,
     queryFn: async () => {
       const res = await supabase
         .from('pronunciation_attempts')

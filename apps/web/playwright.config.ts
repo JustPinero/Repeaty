@@ -11,6 +11,18 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    // Fake media stream for the pronunciation E2E. `--use-fake-ui-for-media-stream`
+    // auto-grants the user-gesture permission prompt in headless Chromium so
+    // `getUserMedia` resolves; `--use-fake-device-for-media-stream` synthesises
+    // a tone-generator audio source. Whisper + Storage are intercepted via
+    // `page.route` in the spec — we don't need real audio content, just a
+    // resolvable MediaStream.
+    launchOptions: {
+      args: [
+        '--use-fake-device-for-media-stream',
+        '--use-fake-ui-for-media-stream',
+      ],
+    },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

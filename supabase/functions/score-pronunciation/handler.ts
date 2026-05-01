@@ -46,11 +46,21 @@ export type HandlerDeps = {
   downloadAudio(path: string): Promise<Blob | null>;
   transcribeAudio(args: TranscribeArgs): Promise<string>;
   insertAttempt(row: AttemptRow): Promise<{ id: string }>;
+  /** Optional cost estimator. Production wires the Whisper-pricing formula in
+   * `index.ts`; tests stub a fixed value so the log-line assertion is stable.
+   * Returns `null` on error paths to keep the field present-but-typed per
+   * `references/api-contracts.md` § Logging contract. */
+  estimateWhisperCostUsd?(audioSize: number): number;
   now(): number;
   log(line: object): void;
 };
 
 const TRANSCRIBE_TIMEOUT_MS = 15_000;
+/** Mirror of `apps/web/src/features/pronunciation/storage.ts:MAX_AUDIO_BYTES`.
+ * The helper-side cap is a UX shortcut; this is the actual security boundary —
+ * a hand-crafted client could upload a >10 MB blob via a direct supabase-js
+ * call and then ask us to transcribe it, which Whisper happily charges us for. */
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 
 export function createHandler(deps: HandlerDeps) {
   return async function handler(req: Request): Promise<Response> {
@@ -146,7 +156,7 @@ export function createHandler(deps: HandlerDeps) {
         startedAt,
         userId: user.id,
         result: jsonError(
-          'FORBIDDEN_TIER',
+          'FORBIDDEN_RESOURCE',
           'audio_storage_path must be of the form `${user_id}/${card_id}/<file>`',
         ),
       });
@@ -161,6 +171,18 @@ export function createHandler(deps: HandlerDeps) {
         startedAt,
         userId: user.id,
         result: jsonError('UPSTREAM_FAILED', 'Failed to download audio'),
+      });
+    }
+    if (audio.size > MAX_AUDIO_BYTES) {
+      return finalize({
+        deps,
+        requestId,
+        startedAt,
+        userId: user.id,
+        result: jsonError(
+          'INVALID_PAYLOAD',
+          `audio too large: ${audio.size} > ${MAX_AUDIO_BYTES}`,
+        ),
       });
     }
 
@@ -219,11 +241,14 @@ export function createHandler(deps: HandlerDeps) {
       });
     }
 
+    const costEstimateUsd = deps.estimateWhisperCostUsd?.(audio.size) ?? null;
+
     return finalize({
       deps,
       requestId,
       startedAt,
       userId: user.id,
+      costEstimateUsd,
       result: jsonSuccess({
         attempt_id: inserted.id,
         whisper_transcript: transcript,
@@ -239,6 +264,7 @@ function finalize(args: {
   requestId: string;
   startedAt: number;
   userId: string | null;
+  costEstimateUsd?: number | null;
   result: Response;
 }): Response {
   const latency_ms = args.deps.now() - args.startedAt;
@@ -248,6 +274,7 @@ function finalize(args: {
     user_id: args.userId,
     status: args.result.status,
     latency_ms,
+    cost_estimate_usd: args.costEstimateUsd ?? null,
   });
   return args.result;
 }

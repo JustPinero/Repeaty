@@ -11,7 +11,12 @@
 export const EDGE_ERROR_CODES = [
   'INVALID_PAYLOAD',
   'UNAUTHENTICATED',
+  /** 403 — caller is on a tier that can't reach this Edge Function (free hitting Pro). */
   'FORBIDDEN_TIER',
+  /** 403 — caller is authenticated and on the right tier but is asking about a
+   * resource they don't own (e.g. an audio_storage_path that doesn't begin
+   * with their user_id). Distinct from FORBIDDEN_TIER so callers can branch. */
+  'FORBIDDEN_RESOURCE',
   'NOT_FOUND',
   'RATE_LIMITED',
   'UPSTREAM_TIMEOUT',
@@ -25,6 +30,7 @@ export const EDGE_ERROR_HTTP_STATUS: Record<EdgeErrorCode, number> = {
   INVALID_PAYLOAD: 400,
   UNAUTHENTICATED: 401,
   FORBIDDEN_TIER: 403,
+  FORBIDDEN_RESOURCE: 403,
   NOT_FOUND: 404,
   RATE_LIMITED: 429,
   UPSTREAM_TIMEOUT: 504,

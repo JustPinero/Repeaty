@@ -18,7 +18,7 @@
     },
     "pronunciation-session": {
       "phase": 4,
-      "status": "not-started",
+      "status": "in-progress",
       "spec": "apps/web/tests/e2e/pronunciation-session.spec.ts"
     },
     "ai-deck-generation-pro": {

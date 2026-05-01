@@ -63,6 +63,19 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
+### DEBT-008 — Offline queueing for pronunciation attempts
+- **Date deferred:** 2026-05-01
+- **Originating phase / request:** Phase 6 / Request 6.4
+- **What was deferred:** `usePronunciationSession.submitRecording` does NOT enqueue to Dexie when offline — it currently lets the upload fail. Persisting the audio Blob in IndexedDB (Dexie supports it) is straightforward; the replay state machine on reconnect is the harder part because it needs to re-upload to Storage AND re-invoke `score-pronunciation` AND handle 401 re-auth between the two steps without losing the queued blob.
+- **Why deferred:** v1 ships review + comprehension queueing. Pronunciation queueing is a multi-step replay (upload → invoke → write attempt row) where each step has its own failure modes. Beta validation will tell us if Ben actually uses pronunciation offline often enough to justify the extra ~200 LOC of replay state machine.
+- **To activate:**
+  1. Add `pending_pronunciation_attempts` Dexie table with a `Blob` column for the audio + the storage path that would have been written.
+  2. Update `usePronunciationSession.submitRecording` with a `navigator.onLine === false` branch that enqueues the blob + card_id.
+  3. Extend `useOfflineReplay`'s `replayPronunciation` handler: re-upload via `uploadPronunciationBlob`, then call `supabase.functions.invoke('score-pronunciation', ...)`. If the upload succeeds but the function call fails, leave the storage path in the queued row so a retry doesn't double-upload.
+  4. Add integration tests covering: offline → enqueue → reconnect → flush; partial failure (upload OK, function down) → retry only the function call.
+- **Estimated effort:** M (~1 day).
+- **Reversal pointer:** No code change to revert; activation is additive.
+
 ### DEBT-007 — Properly-sized PWA icons + remaining Peaty poses
 - **Date deferred:** 2026-05-01
 - **Originating phase / request:** Phase 6 / Request 6.2

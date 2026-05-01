@@ -7,6 +7,7 @@ import {
   type ScoreBucket,
 } from '@repeaty/shared';
 import { supabase } from '@/lib/supabase';
+import { enqueueComprehension } from '@/lib/offline-queue';
 import { useAuthUser } from '@/features/auth';
 
 export type ComprehensionCard = {
@@ -138,22 +139,37 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
       // visible at the call site. `correct` is a coarse-grained boolean
       // derived from the bucket — anything not 'miss' counts as correct
       // for streak / dashboard purposes.
-      const inserted = await supabase
-        .from('comprehension_attempts')
-        .insert({
+      let attemptId: string | null = null;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        // Offline: enqueue for replay on reconnect. The user still sees the
+        // result UI immediately; attemptId stays null so the Phase-5
+        // useFeedback hook falls back to canned-text rather than firing
+        // generate-feedback against a row that doesn't exist server-side.
+        await enqueueComprehension({
           user_id: userId,
           card_id: currentCard.id,
           response_ms: responseMs,
           correct: cardBucket !== 'miss',
-        })
-        .select('id')
-        .single();
-      if (inserted.error) {
-        // Don't block the UX on a persistence hiccup — log and continue.
-        console.error('comprehension_attempts insert failed', {
-          cardId: currentCard.id,
-          error: inserted.error,
         });
+      } else {
+        const inserted = await supabase
+          .from('comprehension_attempts')
+          .insert({
+            user_id: userId,
+            card_id: currentCard.id,
+            response_ms: responseMs,
+            correct: cardBucket !== 'miss',
+          })
+          .select('id')
+          .single();
+        if (inserted.error) {
+          // Don't block the UX on a persistence hiccup — log and continue.
+          console.error('comprehension_attempts insert failed', {
+            cardId: currentCard.id,
+            error: inserted.error,
+          });
+        }
+        attemptId = (inserted.data?.id as string | undefined) ?? null;
       }
 
       const result: CardResult = {
@@ -163,7 +179,7 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
         responseMs,
         similarity: sim,
         response: trimmed,
-        attemptId: (inserted.data?.id as string | undefined) ?? null,
+        attemptId,
       };
 
       setPendingResult(result);

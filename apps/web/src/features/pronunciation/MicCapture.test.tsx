@@ -116,6 +116,26 @@ describe('MicCapture', () => {
     });
   });
 
+  it('cancels the in-flight recording if unmounted before setHandle resolves', async () => {
+    let resolveStart: (h: { __brand: 'RecordingHandle' }) => void = () => {};
+    startRecordingMock.mockImplementation(
+      () =>
+        new Promise<{ __brand: 'RecordingHandle' }>((r) => {
+          resolveStart = r;
+        }),
+    );
+
+    const user = userEvent.setup();
+    const { unmount } = render(<MicCapture onRecorded={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /start recording/i }));
+
+    unmount();
+    resolveStart({ __brand: 'RecordingHandle' as const });
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(cancelRecordingMock).toHaveBeenCalledTimes(1);
+  });
+
   it('Re-record resets back to idle and clears the blob', async () => {
     const onReset = vi.fn();
     const user = userEvent.setup();

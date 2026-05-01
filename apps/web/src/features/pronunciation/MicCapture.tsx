@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 import { platform } from '@/platform';
 import type { RecordingHandle } from '@/platform';
@@ -30,11 +30,23 @@ export function MicCapture({ onRecorded, onReset }: Props) {
   const [startedAt, setStartedAt] = useState<number>(0);
   const [playbackInFlight, setPlaybackInFlight] = useState(false);
 
+  // Cancel any handle stashed in state at unmount.
   useEffect(() => {
     return () => {
       if (handle) platform.cancelRecording(handle);
     };
   }, [handle]);
+
+  // Pre-`setHandle` cancellation — if the user clicks Record and then
+  // navigates away during the `'requesting'` state, the resolved handle
+  // would otherwise orphan a live MediaStream (mic LED stays on until the
+  // page reloads). The ref check pairs with the cleanup effect above.
+  const unmountedRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+    };
+  }, []);
 
   async function handleStart() {
     setStatus('requesting');
@@ -42,14 +54,19 @@ export function MicCapture({ onRecorded, onReset }: Props) {
     try {
       const perm = await platform.requestMicPermission();
       if (perm === 'denied') {
-        setStatus('denied');
+        if (!unmountedRef.current) setStatus('denied');
         return;
       }
       const h = await platform.startRecording();
+      if (unmountedRef.current) {
+        platform.cancelRecording(h);
+        return;
+      }
       setHandle(h);
       setStartedAt(Date.now());
       setStatus('recording');
     } catch (err) {
+      if (unmountedRef.current) return;
       // getUserMedia rejects with NotAllowedError when the user denies the
       // user-gesture-driven prompt. The Permissions API may return 'prompt'
       // even after the user has just clicked "Block".

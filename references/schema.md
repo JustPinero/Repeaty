@@ -118,7 +118,7 @@ FSRS state, one row per (user, card).
 
 **Indexes:** `idx_pron_user_card_created (user_id, card_id, created_at DESC)` for history view.
 **RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy — see `pronunciation-audio` § below.
-**Storage retention:** Daily pg_cron job `audio-retention-daily` (03:00 UTC) calls `purge_free_tier_audio()` which deletes `pronunciation-audio/${user_id}/...` files older than 7 days for `tier='free'` users and NULLs the `pronunciation_attempts.audio_storage_path` for those rows. Pro/admin audio is preserved indefinitely. Lands in 0012 (Request 4.6).
+**Storage retention:** Daily pg_cron job `audio-retention-daily` (03:00 UTC) calls `purge_free_tier_audio()` which NULLs `pronunciation_attempts.audio_storage_path` for free-tier rows older than 7 days, hiding the audio from the UI's history view (the Play button only renders when `audio_storage_path IS NOT NULL`). The underlying file blob in `storage.objects` is **not** removed in v1 — Supabase blocks direct `DELETE FROM storage.objects` from any role with a trigger. End-to-end file-blob cleanup lands when [DEBT-005](../audits/debt.md) activates (an Edge Function calling the Supabase Storage HTTP API). Pro/admin audio is preserved indefinitely. Implemented in 0012 (Request 4.6); pruned to path-only in 0013; column nullability in 0014.
 
 ## Storage buckets
 

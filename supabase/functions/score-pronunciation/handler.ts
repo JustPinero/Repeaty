@@ -133,8 +133,13 @@ export function createHandler(deps: HandlerDeps) {
     // ── Path-prefix guard (defense in depth — bucket RLS already blocks
     //    cross-user *uploads*; this stops a malicious client from tricking the
     //    Edge Function into transcribing someone else's audio via service-role
-    //    download). ─────────────────────────────────────────────────────────
-    if (!parsed.audio_storage_path.startsWith(`${user.id}/`)) {
+    //    download). Segment-anchored equality matches the bucket policy's
+    //    `(storage.foldername(name))[1]` check; `startsWith` would be
+    //    sound for UUIDs but break silently if user-ids ever lose that
+    //    prefix-collision-resistant property.
+    //    ─────────────────────────────────────────────────────────────────
+    const segments = parsed.audio_storage_path.split('/');
+    if (segments[0] !== user.id || segments.length < 3) {
       return finalize({
         deps,
         requestId,
@@ -142,7 +147,7 @@ export function createHandler(deps: HandlerDeps) {
         userId: user.id,
         result: jsonError(
           'FORBIDDEN_TIER',
-          'audio_storage_path must start with the caller user_id',
+          'audio_storage_path must be of the form `${user_id}/${card_id}/<file>`',
         ),
       });
     }

@@ -255,4 +255,34 @@ describe('webPlatform mic capture', () => {
       expect(track.stopped).toBe(true);
     }
   });
+
+  it('playRecordedAudio rejects when audio.play() rejects (iOS no-user-gesture)', async () => {
+    const originalAudio = window.Audio;
+    type MockAudioInstance = {
+      src: string;
+      addEventListener(type: string, fn: (e: Event) => void): void;
+      play(): Promise<void>;
+    };
+    class MockAudio implements MockAudioInstance {
+      src: string;
+      private listeners = new Map<string, ((e: Event) => void)[]>();
+      constructor(src: string) {
+        this.src = src;
+      }
+      addEventListener(type: string, fn: (e: Event) => void) {
+        const list = this.listeners.get(type) ?? [];
+        list.push(fn);
+        this.listeners.set(type, list);
+      }
+      play(): Promise<void> {
+        return Promise.reject(new DOMException('NotAllowedError', 'NotAllowedError'));
+      }
+    }
+    (window as unknown as { Audio: unknown }).Audio = MockAudio;
+
+    const blob = new Blob(['x'], { type: 'audio/webm' });
+    await expect(webPlatform.playRecordedAudio(blob)).rejects.toThrow();
+
+    (window as unknown as { Audio: typeof Audio }).Audio = originalAudio;
+  });
 });

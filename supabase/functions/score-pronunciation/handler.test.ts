@@ -122,6 +122,30 @@ Deno.test('returns 403 when audio path does not start with user_id', async () =>
   assertEquals(body.error.code, 'FORBIDDEN_TIER');
 });
 
+Deno.test('returns 403 for prefix-collision paths (would have passed startsWith)', async () => {
+  // ${user_id}-other/... has the same `${user.id}` startsWith prefix as a
+  // valid path, but the first path segment differs. Segment-anchored equality
+  // catches it; the prior `startsWith` would have let it through if user-ids
+  // ever lost their UUID prefix-collision-resistance.
+  const handler = createHandler(happyDeps());
+  const req = buildRequest({
+    card_id: FAKE_CARD,
+    audio_storage_path: `${FAKE_USER}-other/${FAKE_CARD}/foo.webm`,
+  });
+  const res = await handler(req);
+  assertEquals(res.status, 403);
+});
+
+Deno.test('returns 403 when path has fewer than 3 segments', async () => {
+  const handler = createHandler(happyDeps());
+  const req = buildRequest({
+    card_id: FAKE_CARD,
+    audio_storage_path: `${FAKE_USER}/lone-segment.webm`,
+  });
+  const res = await handler(req);
+  assertEquals(res.status, 403);
+});
+
 Deno.test('returns 504 when transcribeAudio aborts', async () => {
   const handler = createHandler(
     happyDeps({

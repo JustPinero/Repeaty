@@ -217,7 +217,15 @@ export const webPlatform: PlatformAdapter = {
         const err = event as unknown as { error?: { message?: string } };
         reject(new Error(`Playback failed: ${err.error?.message ?? 'unknown error'}`));
       });
-      void audio.play();
+      // play() rejects (without firing 'error') in three real cases: iOS
+      // Safari outside a user gesture (NotAllowedError), autoplay-policy
+      // block, codec mismatch. Without a catch the outer Promise hangs and
+      // MicCapture's `playbackInFlight` stays true. URL.revokeObjectURL is
+      // idempotent so racing with a later 'error' is safe.
+      audio.play().catch((err: unknown) => {
+        cleanup();
+        reject(err instanceof Error ? err : new Error(String(err)));
+      });
     });
   },
 };

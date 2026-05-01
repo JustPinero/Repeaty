@@ -63,6 +63,19 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
+### DEBT-005 — Free-tier audio file blob cleanup
+- **Date deferred:** 2026-04-30
+- **Originating phase / request:** Phase 4 / Request 4.6
+- **What was deferred:** Removing the underlying file blob from Supabase Storage when the daily retention job reaps a free-tier audio recording. The current `purge_free_tier_audio()` SQL function only NULLs `pronunciation_attempts.audio_storage_path`; the user-visible privacy property holds (no row references the audio, so the Play button disappears) but the file itself stays in `storage.objects`. Recent Supabase versions block direct `DELETE FROM storage.objects` from any role with a trigger ("Direct deletion from storage tables is not allowed. Use the Storage API instead.").
+- **Why deferred:** The Storage API is HTTP-only — calling it from a SQL cron means adding `pg_net` (or equivalent) plus serializing the per-row HTTP DELETEs. Edge-Function path needs Supabase Cron schedule wiring outside the migration tree. Either is bigger than the 4.6 budget, and the v1 user-facing privacy property is satisfied by the path NULLing on schedule.
+- **To activate:**
+  1. Add `supabase/functions/audio-retention/index.ts` (Deno) — service-role client, SELECT stale free-tier rows, batch `supabase.storage.from('pronunciation-audio').remove(paths)`, UPDATE the rows.
+  2. Schedule via Supabase Dashboard → Database → Cron, daily at 03:00 UTC. Document in `references/deployment-landmines.md`.
+  3. Drop the `cron.schedule('audio-retention-daily', ...)` entry in a follow-up migration; rename `purge_free_tier_audio()` to a deprecation comment or drop entirely.
+  4. Optionally: write a one-off migration that queues all currently-orphaned files (`audio_storage_path IS NULL` + a corresponding storage.objects row) into a `pending_storage_purge` table for the new Edge Function to drain on first run.
+- **Estimated effort:** S (≤ 1 day)
+- **Reversal pointer:** Migration `0013_audio_retention_path_only.sql` (drops the storage.objects DELETE from the SQL function). Activation adds an Edge Function + reschedule; no reverse migration needed.
+
 ### DEBT-004 — Phoneme-level pronunciation scoring
 - **Date deferred:** 2026-04-29
 - **Originating phase / request:** Kickoff (ADR-007)

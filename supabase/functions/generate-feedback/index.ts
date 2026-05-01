@@ -154,12 +154,15 @@ const deps: HandlerDeps = {
     if (error) throw new Error(error.message);
   },
 
-  // Placeholder — overridden per-request inside Deno.serve below so the RPC
-  // resolves auth.uid() via the caller's JWT (SECURITY DEFINER reads the
-  // connection's auth context, not the function's definer). Calling it via
+  // Placeholders — overridden per-request inside Deno.serve below so the RPCs
+  // resolve auth.uid() via the caller's JWT (SECURITY DEFINER reads the
+  // connection's auth context, not the function's definer). Calling them via
   // the static service-role client raises UNAUTHENTICATED.
   async bumpRateLimit(_bucket: string, _cap: number): Promise<number> {
     throw new Error('bumpRateLimit must be bound per-request');
+  },
+  async decrementRateLimit(_bucket: string): Promise<void> {
+    throw new Error('decrementRateLimit must be bound per-request');
   },
 
   async callClaude({ system, user, signal }) {
@@ -222,6 +225,13 @@ Deno.serve((req) => {
       });
       if (error) throw new Error(error.message);
       return data as number;
+    },
+    async decrementRateLimit(bucket: string): Promise<void> {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { error } = await client.rpc('bump_rate_limit_decrement', {
+        p_bucket: bucket,
+      });
+      if (error) throw new Error(error.message);
     },
   };
   return createHandler(requestDeps)(req);

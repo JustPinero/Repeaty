@@ -46,6 +46,9 @@ export type HandlerDeps = {
     limit: number,
   ): Promise<string[]>;
   bumpRateLimit(bucket: string, cap: number): Promise<number>;
+  /** Refund a quota slot when Claude fails for an *infrastructure* reason
+   * (timeout, transport / 5xx). NOT called for Zod-parse failures. */
+  decrementRateLimit(bucket: string): Promise<void>;
   callClaude(args: { system: string; user: string; signal: AbortSignal }): Promise<string>;
   insertDeckWithCards(
     ownerId: string,
@@ -224,6 +227,16 @@ export function createHandler(deps: HandlerDeps) {
         err instanceof Error &&
         (err.name === 'AbortError' || /aborted|timeout/i.test(err.message));
       const code = isAbort ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_FAILED';
+      try {
+        await deps.decrementRateLimit('lesson_generation');
+      } catch (decErr) {
+        deps.log({
+          fn: 'generate-lesson',
+          request_id: requestId,
+          warn: 'rate-limit decrement failed',
+          message: decErr instanceof Error ? decErr.message : String(decErr),
+        });
+      }
       return finalize({
         deps,
         requestId,

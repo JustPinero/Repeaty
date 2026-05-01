@@ -84,6 +84,11 @@ export type HandlerDeps = {
     text: string,
   ): Promise<void>;
   bumpRateLimit(bucket: string, cap: number): Promise<number>;
+  /** Counterpart to `bumpRateLimit`. Called inside the upstream-failure
+   * catch when the Anthropic call rejects for an *infrastructure* reason
+   * (timeout, transport / 5xx). Not called for Zod-parse failures (the
+   * model gave us garbage; the user's likely retry should still tick). */
+  decrementRateLimit(bucket: string): Promise<void>;
   callClaude(args: { system: string; user: string; signal: AbortSignal }): Promise<string>;
   estimateClaudeCostUsd(inputChars: number, outputChars: number): number;
   now(): number;
@@ -316,6 +321,19 @@ export function createHandler(deps: HandlerDeps) {
         err instanceof Error &&
         (err.name === 'AbortError' || /aborted|timeout/i.test(err.message));
       const code = isAbort ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_FAILED';
+      // Refund the rate-limit slot — the user shouldn't pay for a transient
+      // upstream outage. Decrement is best-effort; failures here don't
+      // promote the original error code, just get logged.
+      try {
+        await deps.decrementRateLimit('feedback_generation');
+      } catch (decErr) {
+        deps.log({
+          fn: 'generate-feedback',
+          request_id: requestId,
+          warn: 'rate-limit decrement failed',
+          message: decErr instanceof Error ? decErr.message : String(decErr),
+        });
+      }
       return finalize({
         deps,
         requestId,
@@ -333,6 +351,8 @@ export function createHandler(deps: HandlerDeps) {
     try {
       parsedOutput = FeedbackOutputSchema.parse(JSON.parse(stripFence(raw)));
     } catch (err) {
+      // Zod-parse failure is the model's fault, not infra — keep the bump
+      // ticking so a misbehaving prompt template can't drain quota silently.
       return finalize({
         deps,
         requestId,

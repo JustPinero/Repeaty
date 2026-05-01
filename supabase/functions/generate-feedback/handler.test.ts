@@ -47,6 +47,7 @@ function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs
       _text: string,
     ) => Promise.resolve(),
     bumpRateLimit: (_bucket: string, _cap: number) => Promise.resolve(1),
+    decrementRateLimit: (_bucket: string) => Promise.resolve(),
     callClaude: (_args: { system: string; user: string; signal: AbortSignal }) =>
       Promise.resolve(
         JSON.stringify({ feedback_text: 'Try emphasising the "h" sound at the start.' }),

@@ -62,34 +62,26 @@ const deps: HandlerDeps = {
   },
 
   async getRecentWeakWords(userId, languageCode, limit) {
-    // Weak words proxy: cards from `comprehension_attempts.correct = false`
-    // OR pronunciation_attempts.similarity_score < 0.6, joined to cards filtered
-    // by language, deduped + most-recent-first, limited.
-    const { data, error } = await serviceClient
-      .from('comprehension_attempts')
-      .select('cards!inner(target_text, language_code), correct, created_at')
-      .eq('user_id', userId)
-      .eq('correct', false)
-      .order('created_at', { ascending: false })
-      .limit(limit * 2);
+    // Single round-trip via the RPC (migration 0020). Unions
+    // comprehension_attempts (correct=false) + pronunciation_attempts
+    // (similarity_score<0.6) + reviews (ease<1.6), filters server-side by
+    // language_code, dedupes + orders by recency, returns up to limit.
+    const { data, error } = await serviceClient.rpc('get_recent_weak_words', {
+      p_user_id: userId,
+      p_language: languageCode,
+      p_limit: limit,
+    });
     if (error || !data) return [];
-    type Joined = { cards: { target_text: string; language_code: string } };
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const row of data as unknown as Joined[]) {
-      if (row.cards.language_code !== languageCode) continue;
-      if (seen.has(row.cards.target_text)) continue;
-      seen.add(row.cards.target_text);
-      out.push(row.cards.target_text);
-      if (out.length >= limit) break;
-    }
-    return out;
+    type Row = { target_text: string; last_seen: string };
+    return (data as Row[]).map((r) => r.target_text);
   },
 
-  // Placeholder — overridden per-request inside Deno.serve below so the RPC
-  // resolves auth.uid() via the caller's JWT.
+  // Placeholders — overridden per-request inside Deno.serve below.
   async bumpRateLimit(_bucket: string, _cap: number): Promise<number> {
     throw new Error('bumpRateLimit must be bound per-request');
+  },
+  async decrementRateLimit(_bucket: string): Promise<void> {
+    throw new Error('decrementRateLimit must be bound per-request');
   },
 
   async callClaude({ system, user, signal }) {
@@ -161,6 +153,13 @@ Deno.serve((req) => {
       });
       if (error) throw new Error(error.message);
       return data as number;
+    },
+    async decrementRateLimit(bucket: string): Promise<void> {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { error } = await client.rpc('bump_rate_limit_decrement', {
+        p_bucket: bucket,
+      });
+      if (error) throw new Error(error.message);
     },
     async insertDeckWithCards(ownerId, languageCode, cefr, deckName, cards) {
       const client = jwt ? userClient(jwt) : serviceClient;

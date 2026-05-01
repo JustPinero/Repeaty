@@ -19,6 +19,7 @@ function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs
     getRecentWeakWords: (_userId: string, _languageCode: string, _limit: number) =>
       Promise.resolve(['casa', 'comer']),
     bumpRateLimit: (_bucket: string, _cap: number) => Promise.resolve(1),
+    decrementRateLimit: (_bucket: string) => Promise.resolve(),
     callClaude: (_args: { system: string; user: string; signal: AbortSignal }) =>
       Promise.resolve(
         JSON.stringify({
@@ -190,26 +191,56 @@ Deno.test('strips markdown fences before JSON.parse', async () => {
   assertEquals(body.data.deck_name, 'fenced');
 });
 
-Deno.test('Claude AbortError → 504 UPSTREAM_TIMEOUT', async () => {
+Deno.test('Claude AbortError → 504 UPSTREAM_TIMEOUT + refund', async () => {
+  let decrementCalls = 0;
   const handler = createHandler(
     happyDeps({
       callClaude: () => {
         throw new DOMException('Timeout', 'AbortError');
       },
+      decrementRateLimit: (_b: string) => {
+        decrementCalls += 1;
+        return Promise.resolve();
+      },
     }),
   );
   const res = await handler(buildRequest({ language_code: 'es' }));
   assertEquals(res.status, 504);
+  assertEquals(decrementCalls, 1);
 });
 
-Deno.test('Claude returns malformed JSON → 502 UPSTREAM_FAILED', async () => {
+Deno.test('Anthropic 5xx (transport throw) refunds the rate-limit slot', async () => {
+  let decrementCalls = 0;
   const handler = createHandler(
     happyDeps({
-      callClaude: () => Promise.resolve('not json'),
+      callClaude: () => {
+        throw new Error('Anthropic 503: service unavailable');
+      },
+      decrementRateLimit: (_b: string) => {
+        decrementCalls += 1;
+        return Promise.resolve();
+      },
     }),
   );
   const res = await handler(buildRequest({ language_code: 'es' }));
   assertEquals(res.status, 502);
+  assertEquals(decrementCalls, 1);
+});
+
+Deno.test('Claude returns malformed JSON → 502 UPSTREAM_FAILED + does NOT refund', async () => {
+  let decrementCalls = 0;
+  const handler = createHandler(
+    happyDeps({
+      callClaude: () => Promise.resolve('not json'),
+      decrementRateLimit: (_b: string) => {
+        decrementCalls += 1;
+        return Promise.resolve();
+      },
+    }),
+  );
+  const res = await handler(buildRequest({ language_code: 'es' }));
+  assertEquals(res.status, 502);
+  assertEquals(decrementCalls, 0);
 });
 
 Deno.test('Claude returns Zod-invalid output → 502', async () => {

@@ -49,6 +49,11 @@ vi.mock('@/features/auth', () => ({
   useAuthUser: () => ({ user: { id: 'u-1', email: 'a@example.com' }, isLoading: false }),
 }));
 
+const enqueueReviewMock = vi.fn(async (_payload: unknown) => {});
+vi.mock('@/lib/offline-queue', () => ({
+  enqueueReview: (payload: unknown) => enqueueReviewMock(payload),
+}));
+
 import { useReviewSession } from './useReviewSession';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -72,6 +77,7 @@ describe('useReviewSession', () => {
     deckResult.mockReset();
     cardsResult.mockReset();
     upsertResult.mockReset();
+    enqueueReviewMock.mockReset();
     deckResult.mockResolvedValue({ data: { id: 'deck-1' }, error: null });
     upsertResult.mockResolvedValue({ error: null });
   });
@@ -229,5 +235,32 @@ describe('useReviewSession', () => {
 
     // Exactly one rating counted.
     expect(result.current.progress.reviewed).toBe(1);
+  });
+
+  it('offline: enqueues to the Dexie queue instead of upserting', async () => {
+    const originalOnLine = Object.getOwnPropertyDescriptor(window.navigator, 'onLine');
+    Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
+    try {
+      cardsResult.mockResolvedValue({ data: cards, error: null });
+      const { result } = renderHook(() => useReviewSession('deck-1'), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      await act(async () => { await result.current.submitRating(Rating.Good); });
+
+      expect(enqueueReviewMock).toHaveBeenCalledTimes(1);
+      const payload = (enqueueReviewMock.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
+      expect(payload.user_id).toBe('u-1');
+      expect(payload.card_id).toBe('c1');
+      expect(typeof payload.due_at).toBe('string');
+      expect(typeof payload.ease).toBe('number');
+
+      // Online write path NOT exercised.
+      expect(upsertResult).not.toHaveBeenCalled();
+      // Local UI advances regardless: queue head moved off c1.
+      expect(result.current.currentCard?.id).toBe('c2');
+      expect(result.current.progress.reviewed).toBe(1);
+    } finally {
+      if (originalOnLine) Object.defineProperty(window.navigator, 'onLine', originalOnLine);
+    }
   });
 });

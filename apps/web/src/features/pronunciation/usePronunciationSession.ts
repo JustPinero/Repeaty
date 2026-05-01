@@ -40,9 +40,19 @@ export type PronunciationSessionState = {
 };
 
 export const DECK_NOT_FOUND = 'DECK_NOT_FOUND';
+/** Pronunciation needs a connection. Offline queueing for the audio Blob +
+ * the score-pronunciation round trip is tracked in DEBT-008. Until it
+ * activates, `submitRecording` short-circuits with this typed error so the
+ * UI surface (MicCapture) can render an actionable "reconnect and try
+ * again" message instead of the generic transport-failure UX. */
+export const OFFLINE_PRONUNCIATION_UNSUPPORTED = 'OFFLINE_PRONUNCIATION_UNSUPPORTED';
 
 export function isDeckNotFoundError(error: unknown): boolean {
   return error instanceof Error && error.message === DECK_NOT_FOUND;
+}
+
+export function isOfflinePronunciationError(error: unknown): boolean {
+  return error instanceof Error && error.message === OFFLINE_PRONUNCIATION_UNSUPPORTED;
 }
 
 type EdgeBody<T> =
@@ -111,6 +121,12 @@ export function usePronunciationSession(deckId: string): PronunciationSessionSta
       if (submittingRef.current) {
         if (pendingResult) return pendingResult;
         throw new Error('submission already in flight');
+      }
+      // Offline short-circuit. DEBT-008 will replace this with proper
+      // enqueue-and-replay semantics; for v1, fail fast with a clear
+      // message rather than letting supabase-js throw "Failed to fetch".
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        throw new Error(OFFLINE_PRONUNCIATION_UNSUPPORTED);
       }
       submittingRef.current = true;
       try {

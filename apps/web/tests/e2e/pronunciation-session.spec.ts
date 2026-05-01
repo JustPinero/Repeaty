@@ -60,7 +60,17 @@ test.describe('@phase-4 pronunciation-session', () => {
     await page.getByRole('button', { name: /finish|done|complete/i }).click();
 
     // Browse decks → click Pronunciation on the first bundled deck.
+    // Wait for the post-onboarding /app dashboard to be ready (URL settled +
+    // dashboard renders) so the auth context has fully hydrated before the
+    // direct navigation to /app/decks. Then wait for the deck list page's
+    // heading before reaching for the pronunciation link — DEBT-006 was a
+    // race where the locator timed out before the bundled-decks query
+    // settled.
+    await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
     await page.goto('/app/decks');
+    await expect(page.getByRole('heading', { name: /your decks/i })).toBeVisible({
+      timeout: 15_000,
+    });
     const pronLink = page.getByRole('link', { name: /Pronunciation practice/i }).first();
     await expect(pronLink).toBeVisible({ timeout: 15_000 });
     await pronLink.click();

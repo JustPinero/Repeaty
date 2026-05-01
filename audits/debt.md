@@ -93,6 +93,8 @@ Format per entry:
 
 ### DEBT-006 — `pronunciation-session` E2E flow
 - **Date deferred:** 2026-05-01
+- **Date resolved:** 2026-05-01 (post-launch maintenance pass)
+- **Resolution:** Hypothesis B applied — added explicit waits for the `/app` URL settlement post-onboarding AND for the `Your decks` heading to appear before reaching for the Pronunciation link. `e2e-manifest.json` flipped back to `complete`. ~~_Open_~~
 - **Originating phase / request:** Phase 4 audit gate / chore(5.0)
 - **What was deferred:** Flipping `pronunciation-session` to `complete` in `e2e-manifest.json`. The launchOptions args (`--use-fake-device-for-media-stream` + `--use-fake-ui-for-media-stream`) and the spec body (Stop click → score panel) are wired and run locally, but the `/app/decks` step in the spec — clicking the "Pronunciation practice" link — is flaky in CI: the bundled-decks query hasn't settled by the time the locator times out at 15s. Likely a post-onboarding auth-context-hydration race when the navigation is `page.goto('/app/decks')` rather than a same-app link click.
 - **Why deferred:** chore(5.0) bundled six other audit-deferred fixes; chasing the deck-list race without a CI trace artifact would have stalled the bundle. Reverting the manifest flip is the minimal safe move.

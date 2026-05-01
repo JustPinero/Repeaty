@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm --filter @repeaty/web dev",
     "build": "pnpm -r --if-present build",
+    "build:size": "bash scripts/build-size-report.sh",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test && pnpm test:scripts",

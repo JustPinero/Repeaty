@@ -96,6 +96,37 @@ describe('Flashcard', () => {
     expect(playTargetTextMock).toHaveBeenCalledWith('hola', { lang: 'es' });
   });
 
+  it('renders ipa (kana romanization / pinyin) under the native text when present, after reveal', async () => {
+    const user = userEvent.setup();
+    render(
+      <Flashcard
+        targetText="こんにちは"
+        nativeText="hello"
+        ipa="konnichiwa"
+        languageCode="ja"
+      />,
+    );
+    // ipa is part of the back side, hidden until reveal.
+    expect(screen.queryByText('/konnichiwa/')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /reveal|show answer/i }));
+    expect(screen.getByText('/konnichiwa/')).toBeInTheDocument();
+  });
+
+  it('omits the ipa line when ipa is null (non-CJK card)', async () => {
+    const user = userEvent.setup();
+    render(
+      <Flashcard
+        targetText="hola"
+        nativeText="hello"
+        ipa={null}
+        languageCode="es"
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /reveal|show answer/i }));
+    // No slash-wrapped italic line — the omission keeps non-CJK cards clean.
+    expect(screen.queryByText(/^\/.+\/$/)).not.toBeInTheDocument();
+  });
+
   it('logs (without surfacing) when platform.playTargetText rejects', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     playTargetTextMock.mockRejectedValueOnce(new Error('synthesis-failed'));

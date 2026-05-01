@@ -72,6 +72,41 @@ describe('bundled decks', () => {
     }
   });
 
+  it('ja and zh bundled cards each carry a non-empty ipa (Whisper phonetic anchor)', async () => {
+    const service = getServiceClient();
+    // The `ipa` column is nullable on `cards` (Phase 1.2) and the schema
+    // permits non-CJK cards to leave it null. Phase 6.1 commits to ipa for
+    // every ja and zh card — kana romanization and pinyin-with-tone-marks,
+    // respectively. Regress on either (seed-decks.ts dropping the field, a
+    // YAML edit losing it) and Whisper-anchored learners are flying blind.
+    for (const lang of ['ja', 'zh']) {
+      const deck = await service
+        .from('decks')
+        .select('id')
+        .eq('language_code', lang)
+        .eq('source', 'bundled')
+        .eq('cefr_level', 'A1')
+        .single();
+      expect(deck.error, `expected a bundled ${lang} A1 deck`).toBeNull();
+      const cards = await service
+        .from('cards')
+        .select('target_text, ipa')
+        .eq('deck_id', deck.data!.id);
+      expect(cards.error).toBeNull();
+      expect((cards.data ?? []).length).toBeGreaterThan(0);
+      for (const card of cards.data ?? []) {
+        expect(
+          card.ipa,
+          `expected ipa on ${lang} card "${card.target_text}"`,
+        ).not.toBeNull();
+        expect(
+          (card.ipa ?? '').trim().length,
+          `expected non-empty ipa on ${lang} card "${card.target_text}"`,
+        ).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('every bundled card has target_text, native_text, and language_code', async () => {
     const service = getServiceClient();
     // Fetch all bundled-deck cards and assert no required field is empty.

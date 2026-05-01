@@ -193,40 +193,44 @@ export async function replayQueues(handlers: {
   let flushed = 0;
   let failed = 0;
 
-  // Drain in chronological order (clientCreatedAt asc) per queue. Use
-  // Dexie's cursor-based `each` rather than `toArray` so rows enqueued
-  // mid-drain (multi-tab, rapid online/offline flap) are picked up in the
-  // same pass instead of waiting for the next one — without it, a row whose
-  // `clientCreatedAt` sorts earlier than items still in a snapshot's tail
-  // (clock skew) would land out-of-order on the next pass.
+  // Drain in chronological order (clientCreatedAt asc) per queue. Re-read
+  // the index head between rows (rather than snapshotting once via
+  // `.toArray()`) so rows enqueued mid-drain — multi-tab, rapid offline
+  // flap — are picked up in the same pass instead of waiting for the next
+  // one. Without this, a row whose `clientCreatedAt` sorts earlier than
+  // items still in a snapshot's tail (clock skew across tabs) would land
+  // out-of-order on the next pass.
+  //
+  // We can't use Dexie's `.each(cb)` cursor here because the callback runs
+  // inside a read-only transaction — and our handlers need to write (delete
+  // / update / poison-pill drop). Instead we loop "fetch next-earliest →
+  // process → repeat" with a per-pass visited-id guard so a transient-fail
+  // row that bumps attemptCount but stays in the queue can't trap us.
   for (const queue of [
     'pending_reviews',
     'pending_comprehension_attempts',
     'pending_pronunciation_attempts',
   ] as const) {
-    // Each callback runs sequentially because we explicitly await inside.
-    // The promise returned by `.each(...)` resolves after every row in the
-    // index has been visited, including any added during iteration.
-    const processed: Array<Promise<void>> = [];
-    await db
-      .table(queue)
-      .orderBy('clientCreatedAt')
-      .each((row) => {
-        const task = processOne(
-          db,
-          queue,
-          row as QueuedReview | QueuedComprehension | QueuedPronunciation,
-          handlers,
-        ).then((tally) => {
-          flushed += tally.flushed;
-          failed += tally.failed;
-        });
-        processed.push(task);
-      });
-    // Drain the per-row work serialized: each `processOne` was kicked off
-    // synchronously inside `each`, so awaiting the array here flushes all
-    // of them before moving to the next queue.
-    await Promise.all(processed);
+    const visited = new Set<number>();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const item = (await db
+        .table(queue)
+        .orderBy('clientCreatedAt')
+        .filter((row) => !visited.has((row as { id?: number }).id ?? -1))
+        .first()) as
+        | QueuedReview
+        | QueuedComprehension
+        | QueuedPronunciation
+        | undefined;
+      if (!item) break;
+      const tally = await processOne(db, queue, item, handlers);
+      flushed += tally.flushed;
+      failed += tally.failed;
+      // If the row was retained (transient fail without drop), record its id
+      // so we don't loop on it; otherwise it's been deleted from the table.
+      if (tally.retained && item.id !== undefined) visited.add(item.id);
+    }
   }
   return { flushed, failed };
 }
@@ -243,7 +247,7 @@ async function processOne(
     replayComprehension: ReplayComprehensionFn;
     replayPronunciation?: ReplayPronunciationFn;
   },
-): Promise<{ flushed: number; failed: number }> {
+): Promise<{ flushed: number; failed: number; retained: boolean }> {
   let result: PronunciationReplayResult;
   if (queue === 'pending_reviews') {
     const ok = await handlers.replayReview(item as QueuedReview);
@@ -260,7 +264,7 @@ async function processOne(
 
   if (result.ok) {
     await db.table(queue).delete(item.id!);
-    return { flushed: 1, failed: 0 };
+    return { flushed: 1, failed: 0, retained: false };
   }
 
   // Failure paths. Persist the upload-checkpoint for pronunciation rows so
@@ -280,10 +284,10 @@ async function processOne(
     // eslint-disable-next-line no-console
     console.warn('[offline-queue] dropping unreplayable row', queue, item);
     await db.table(queue).delete(item.id!);
-    return { flushed: 0, failed: 1 };
+    return { flushed: 0, failed: 1, retained: false };
   }
   await db.table(queue).update(item.id!, updates);
-  return { flushed: 0, failed: 1 };
+  return { flushed: 0, failed: 1, retained: true };
 }
 
 /** Wipe all queues. Used by tests + the sign-out path. */

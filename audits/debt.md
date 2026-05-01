@@ -80,19 +80,19 @@ Format per entry:
 - **Estimated effort:** M (~1 day).
 - **Reversal pointer:** No code change to revert; activation is additive.
 
-### DEBT-007 — Properly-sized PWA icons + remaining Peaty poses
+### DEBT-007 — Remaining 9 Peaty mascot poses
 - **Date deferred:** 2026-05-01
+- **Status:** partially resolved (2026-05-01 — icon binaries landed; mascot poses still pending image generation).
 - **Originating phase / request:** Phase 6 / Request 6.2
-- **What was deferred:** The PWA manifest at `apps/web/public/manifest.webmanifest` references the existing welcome-pose JPG at `/peaty/peat-start.jpg` with `sizes: any` as a single-icon fallback. Lighthouse PWA installability allows this but the maskable + 192/512 properly-sized PNG variants are required to hit ≥ 90 on the PWA-icon audit. Same for the remaining Peaty poses 2–10 (cheering / thumbs-up / empathy / mic / book / stopwatch / thinking / sleepy / magic) — only Welcome Wave + AI Magic exist in `apps/web/public/peaty/` today.
-- **Why deferred:** Image generation runs outside the codebase (whatever tool Justin uses against the character reference in `assets/peaty/peaty-poses.md`). The manifest + index.html + InstallHint code is in place; only the binary PNGs are missing. Activation = generate the images, drop them into `apps/web/public/peaty/`, update the manifest's `icons` array to the proper-sized entries.
-- **To activate:**
-  1. Generate the 9 missing illustrations + the 192/512/maskable PNG icons + `peaty-splash.jpg` per the table in `references/repeaty-pwa.md` § Mascot.
+- **Partial resolution:** The 192/512/maskable PWA icons are now generated from the existing welcome-pose JPG via `scripts/build-peaty-icons.ts` (sharp-based, palette-encoded for ~78 KB total) and committed to `apps/web/public/peaty/peaty-icon-{192,512,maskable}.png`. `apps/web/public/manifest.webmanifest` carries three `image/png` entries (`purpose: any` for 192/512, `purpose: maskable` for the safe-zone 512). `apps/web/index.html` `<link rel="apple-touch-icon">` points at the 192 PNG. Regenerate via `pnpm build:icons` (root or apps/web). Smoke test at `scripts/build-peaty-icons.test.ts` asserts the committed binaries' dimensions; the script itself is **not** wired into `vite build` — it's manual.
+- **What's still deferred:** The 9 unique mascot poses (`peaty-cheering`, `peaty-thumbs`, `peaty-empathy`, `peaty-mic`, `peaty-book`, `peaty-stopwatch`, `peaty-thinking`, `peaty-sleepy`, `peaty-magic`) plus `peaty-splash.jpg`. Phase-2 / 3 / 4 components still fall back to the welcome-pose JPG as a placeholder.
+- **Why still deferred:** Pose generation needs an external image-gen tool against the character reference in `assets/peaty/peaty-poses.md`. Sharp-based transforms can't synthesize new poses, only resize the existing JPG.
+- **To activate (remaining work):**
+  1. Generate the 9 missing illustrations + `peaty-splash.jpg` per the table in `references/repeaty-pwa.md` § Mascot.
   2. Save each to `assets/peaty/` (design source-of-truth) AND `apps/web/public/peaty/` (served).
-  3. Update `apps/web/public/manifest.webmanifest` with the 192/512/maskable entries.
-  4. Update `apps/web/index.html` apple-touch-icon to point at the 192 PNG.
-  5. Re-run Lighthouse → confirm PWA installability section is fully green.
-  6. Phase-2 / 3 / 4 components currently using `peat-start.jpg` placeholder may swap to their dedicated poses (PeatyGreeting / Flashcard / Comprehension / Pronunciation headers).
-- **Estimated effort:** S (≤ 0.5 day, almost all in image generation).
+  3. Phase-2 / 3 / 4 components currently using `peat-start.jpg` placeholder swap to their dedicated poses (PeatyGreeting / Flashcard / Comprehension / Pronunciation headers).
+  4. Re-run Lighthouse to confirm PWA installability is still green (icons landed in this partial; this step is to verify the pose swap didn't regress anything).
+- **Estimated effort:** S (remaining, ≤ 0.5 day, almost all in image generation).
 - **Reversal pointer:** No code change to revert; activation is additive.
 
 ### DEBT-006 — `pronunciation-session` E2E flow

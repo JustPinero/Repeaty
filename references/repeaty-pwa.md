@@ -75,27 +75,34 @@ The Flashcard component reads `platform.canSpeak()` at render time and only show
 - `name`: "Repeaty"
 - `short_name`: "Repeaty"
 - `start_url`: `/`
+- `scope`: `/`
 - `display`: `standalone`
-- `theme_color`: TBD (Peaty green-yellow)
-- `background_color`: warm cream to match Peaty illustration
-- `icons`: 192px + 512px + maskable variants, all from the Peaty illustration in `assets/peaty/`
+- `orientation`: `portrait`
+- `theme_color`: `#7bbf3a` (Peaty green)
+- `background_color`: `#fff7e6` (warm cream)
+- `icons`: v1 ships a single-icon fallback (`/peaty/peat-start.jpg`, `sizes: any`). Properly-sized 192/512/maskable PNG variants are deferred to [DEBT-007](../audits/debt.md) (image generation, not code).
 
-### Service worker (Workbox, Phase 6)
+### Service worker (vite-plugin-pwa / Workbox, Phase 6)
 
-Three cache strategies:
+The plugin runs in `generateSW` strategy. Configuration source-of-truth: `apps/web/vite.config.ts`. Manual SW registration in `apps/web/src/main.tsx` (gated on `import.meta.env.PROD`) so dev-server runs aren't fighting the SW.
 
-1. **Static assets** (JS, CSS, fonts): `CacheFirst`, immutable hashed filenames. Workbox precaches at install.
-2. **Bundled deck JSON + audio TTS metadata**: `StaleWhileRevalidate`. Updates next visit but works offline immediately.
-3. **API calls** (Supabase queries, Edge Functions): `NetworkOnly` with optional offline queue (see below).
+Two runtime-caching rules + the install-time precache:
 
-### Offline queue (Phase 2 lays the foundation)
+1. **Install-time precache** (`workbox.globPatterns: ['**/*.{js,css,html,svg,woff2}']`): hashed JS/CSS/HTML/SVG/WOFF2 from the build output. Standard Workbox precache.
+2. **Peaty illustrations** (`/peaty/*.{jpg,jpeg,png,webp}`): `CacheFirst` with `maxEntries: 32, maxAgeSeconds: 30 days`. Illustrations don't change without a content hash, so CacheFirst is safe.
+3. **Supabase API surface** (`*.supabase.co/(rest|storage|functions|auth)/`): `NetworkOnly`. Auth + RLS responses must never be cached. The pattern intentionally excludes any hosted-static URL (only the four API segments match), so a Supabase-hosted JS asset wouldn't fall into CacheFirst by accident.
 
-Dexie holds three queues:
-- `pending_reviews` — review ratings the user submitted while offline. On reconnect, replay in chronological order. Conflict resolution: server wins; client overwrites only when a review for the same card was strictly older.
-- `pending_pronunciation_attempts` — recorded audio + intent. On reconnect, upload audio → call `score-pronunciation`.
-- `pending_comprehension_attempts` — small JSON payloads. On reconnect, batch-insert.
+`skipWaiting: true` + `clientsClaim: true` — a freshly-deployed SW takes over without a reload prompt. Acceptable for v1 (single user, low cadence of breaking changes); revisit if the Capacitor wrap or a multi-tenant beta lands.
 
-The queue replay is a state machine, not a "fire and forget" — it must handle Supabase 401 (re-auth) without losing queued items.
+### Offline queue (Phase 6)
+
+Dexie holds two queues in v1:
+- `pending_reviews` — review ratings the user submitted while offline. On reconnect, replay in chronological order (`clientCreatedAt` asc). Replay calls `supabase.from('reviews').upsert(..., { onConflict: 'user_id,card_id' })` — current behavior is "client wins on the upsert" (server's row gets overwritten unconditionally). The original spec promised a stricter "client overwrites only when client row is strictly older" rule; that's tracked as a Phase-6 fix request.
+- `pending_comprehension_attempts` — small JSON payloads. On reconnect, plain insert. RLS-rejected rows leave the queue with a bumped `attemptCount`; the poison-pill defense drops a row after 5 failed attempts.
+
+`pending_pronunciation_attempts` was scoped for v1 but is deferred to [DEBT-008](../audits/debt.md) — re-uploading the audio Blob plus re-invoking `score-pronunciation` plus handling 401 between the two steps is a meaningfully larger replay state machine than the two simple-write queues. Pronunciation attempts made while offline currently fail at the upload step; the user sees a generic recording-error UX.
+
+The queue replay is a state machine, not a "fire and forget" — Supabase 401 (re-auth) leaves items in the queue with a bumped `attemptCount` rather than losing them; after 5 retries the row is dropped (poison-pill defense, with a console warning) so a single bad row can't block the queue indefinitely.
 
 ### Install prompt (Phase 6)
 

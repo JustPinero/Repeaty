@@ -86,13 +86,10 @@ const deps: HandlerDeps = {
     return out;
   },
 
-  async bumpRateLimit(bucket, cap) {
-    const { data, error } = await serviceClient.rpc('bump_rate_limit', {
-      p_bucket: bucket,
-      p_cap_per_day: cap,
-    });
-    if (error) throw new Error(error.message);
-    return data as number;
+  // Placeholder — overridden per-request inside Deno.serve below so the RPC
+  // resolves auth.uid() via the caller's JWT.
+  async bumpRateLimit(_bucket: string, _cap: number): Promise<number> {
+    throw new Error('bumpRateLimit must be bound per-request');
   },
 
   async callClaude({ system, user, signal }) {
@@ -122,23 +119,15 @@ const deps: HandlerDeps = {
     return text;
   },
 
-  async insertDeckWithCards(ownerId, languageCode, cefr, deckName, cards) {
-    // The RPC checks auth.uid() = p_owner; we need a user-context client to
-    // resolve auth.uid() correctly. The service-role client would resolve to
-    // null, tripping the UNAUTHENTICATED branch. The handler factory doesn't
-    // hand this dep the JWT directly — bind it via a closure in the per-
-    // request flow. v1: keep the jwt-bound binding via a wrapper. (For
-    // simplicity here: re-derive from the request context.) Tracked in the
-    // Phase-5 audit gate alongside the same TODO on `bumpRateLimit`.
-    const { data, error } = await serviceClient.rpc('insert_ai_deck_with_cards', {
-      p_owner: ownerId,
-      p_language: languageCode,
-      p_cefr: cefr,
-      p_deck_name: deckName,
-      p_cards: cards,
-    });
-    if (error) throw new Error(error.message);
-    return data as string;
+  // Placeholder — overridden per-request inside Deno.serve below.
+  async insertDeckWithCards(
+    _ownerId: string,
+    _languageCode: string,
+    _cefr: string,
+    _deckName: string,
+    _cards: unknown,
+  ): Promise<string> {
+    throw new Error('insertDeckWithCards must be bound per-request');
   },
 
   estimateClaudeCostUsd(inputChars: number, outputChars: number) {
@@ -159,7 +148,35 @@ const deps: HandlerDeps = {
   },
 };
 
-Deno.serve(createHandler(deps));
+Deno.serve((req) => {
+  const auth = req.headers.get('Authorization') ?? '';
+  const jwt = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const requestDeps: HandlerDeps = {
+    ...deps,
+    async bumpRateLimit(bucket: string, cap: number): Promise<number> {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { data, error } = await client.rpc('bump_rate_limit', {
+        p_bucket: bucket,
+        p_cap_per_day: cap,
+      });
+      if (error) throw new Error(error.message);
+      return data as number;
+    },
+    async insertDeckWithCards(ownerId, languageCode, cefr, deckName, cards) {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { data, error } = await client.rpc('insert_ai_deck_with_cards', {
+        p_owner: ownerId,
+        p_language: languageCode,
+        p_cefr: cefr,
+        p_deck_name: deckName,
+        p_cards: cards,
+      });
+      if (error) throw new Error(error.message);
+      return data as string;
+    },
+  };
+  return createHandler(requestDeps)(req);
+});
 
 // Suppress unused import — exported for the type contract only.
 export type { HandlerDeps as _GenLessonDeps };

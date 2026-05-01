@@ -158,21 +158,12 @@ const deps: HandlerDeps = {
     if (error) throw new Error(error.message);
   },
 
-  async bumpRateLimit(bucket: string, cap: number) {
-    // Note: bump_rate_limit needs the user JWT context to resolve auth.uid()
-    // inside SECURITY DEFINER. We don't have direct access to the request
-    // JWT here — the production wiring binds it via a closure when
-    // constructing deps per-request. For Phase 5 v1, run as service-role
-    // with an explicit user_id helper. (The handler factory's HandlerDeps
-    // contract takes only bucket + cap, matching the Deno test surface.)
-    // Deferred: extend the dep signature to take userId explicitly. Tracked
-    // in the Phase 5 audit gate.
-    const { data, error } = await serviceClient.rpc('bump_rate_limit', {
-      p_bucket: bucket,
-      p_cap_per_day: cap,
-    });
-    if (error) throw new Error(error.message);
-    return data as number;
+  // Placeholder — overridden per-request inside Deno.serve below so the RPC
+  // resolves auth.uid() via the caller's JWT (SECURITY DEFINER reads the
+  // connection's auth context, not the function's definer). Calling it via
+  // the static service-role client raises UNAUTHENTICATED.
+  async bumpRateLimit(_bucket: string, _cap: number): Promise<number> {
+    throw new Error('bumpRateLimit must be bound per-request');
   },
 
   async callClaude({ system, user, signal }) {
@@ -222,4 +213,20 @@ const deps: HandlerDeps = {
   },
 };
 
-Deno.serve(createHandler(deps));
+Deno.serve((req) => {
+  const auth = req.headers.get('Authorization') ?? '';
+  const jwt = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const requestDeps: HandlerDeps = {
+    ...deps,
+    async bumpRateLimit(bucket: string, cap: number): Promise<number> {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { data, error } = await client.rpc('bump_rate_limit', {
+        p_bucket: bucket,
+        p_cap_per_day: cap,
+      });
+      if (error) throw new Error(error.message);
+      return data as number;
+    },
+  };
+  return createHandler(requestDeps)(req);
+});

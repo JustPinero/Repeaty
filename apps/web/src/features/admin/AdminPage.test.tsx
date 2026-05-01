@@ -3,13 +3,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-const fromMock = vi.fn();
+const rpcMock = vi.fn();
 const invokeMock = vi.fn();
 const profileMock = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: (table: string) => fromMock(table),
+    rpc: (...args: unknown[]) => rpcMock(...args),
     functions: {
       invoke: (...args: unknown[]) => invokeMock(...args),
     },
@@ -63,18 +63,17 @@ const ROWS = [
 ];
 
 function setProfilesQuery(rows: typeof ROWS, error: { message: string } | null = null) {
-  fromMock.mockImplementation(() => ({
-    select: () => ({
-      order: () => ({
-        limit: () => Promise.resolve({ data: rows, error }),
-      }),
-    }),
-  }));
+  rpcMock.mockImplementation((name: string) => {
+    if (name === 'list_admin_profiles') {
+      return Promise.resolve({ data: rows, error });
+    }
+    return Promise.resolve({ data: null, error: { message: `unexpected rpc ${name}` } });
+  });
 }
 
 describe('AdminPage', () => {
   beforeEach(() => {
-    fromMock.mockReset();
+    rpcMock.mockReset();
     invokeMock.mockReset();
     profileMock.mockReset();
     profileMock.mockReturnValue({ profile: ADMIN_PROFILE, isLoading: false });

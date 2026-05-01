@@ -28,11 +28,13 @@ export function AdminPage() {
   const { data, isLoading, isError, error } = useQuery<AdminProfileRow[], Error>({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, email, tier, is_admin, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Direct `from('profiles')` returns only the caller's own row under
+      // the SELECT-own RLS policy. The SECURITY DEFINER RPC checks
+      // `is_admin = true` explicitly and bypasses the policy with an
+      // audit trail (see migration 0018).
+      const { data, error } = await supabase.rpc('list_admin_profiles', {
+        p_limit: 50,
+      });
       if (error) throw new Error(error.message);
       return (data ?? []) as AdminProfileRow[];
     },

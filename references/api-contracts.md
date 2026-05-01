@@ -1,6 +1,6 @@
 # API Contracts — Repeaty Edge Functions
 
-Three Edge Functions, each with one responsibility. All require a valid Supabase JWT in `Authorization: Bearer <token>`. Service-role calls bypass auth (used by cron and admin scripts only — never callable from the browser).
+Four Edge Functions, each with one responsibility. All require a valid Supabase JWT in `Authorization: Bearer <token>`. Service-role calls bypass auth (used by cron and admin scripts only — never callable from the browser).
 
 ## Common shape
 
@@ -159,9 +159,43 @@ type GenerateFeedbackResponse = {
 };
 ```
 
-### Phase-3 stub bridge
+> **Note (Phase 5.4 swap, landed):** The Phase-3 canned-text body of `useFeedback` was replaced with a `useQuery` call to this Edge Function in 5.4. The public hook types — `FeedbackInput` (`{ kind, bucket, targetText, nativeText, userResponse, nativeLanguageCode, attemptId? }`) and `FeedbackResult` (`{ text: string | null, isLoading: boolean }`) — were preserved (additive `attemptId`). `apps/web/src/features/feedback/canned-text.ts` is now a fallback used only on free-tier, perfect-bucket, missing `attemptId`, or transport / 429 / timeout cases — not the primary path.
 
-Until Phase 5 lands, the client uses `apps/web/src/features/feedback/useFeedback.ts` — a synchronous canned-text lookup keyed on `(bucket, native-language-prefix)` (table in `apps/web/src/features/feedback/canned-text.ts`). The hook's public types — `FeedbackInput` (`{ kind, bucket, targetText, nativeText, userResponse, nativeLanguageCode }`) and `FeedbackResult` (`{ text: string | null, isLoading: boolean }`) — will be preserved when the body swaps to a `useQuery`-backed call to this Edge Function. **Don't change the public hook types during the Phase-5 swap without coordinating** — every callsite (currently `FeedbackPanel`, used by `ComprehensionSessionPage`) depends on them.
+## `flip-tier` (Phase 5, admin only)
+
+**Purpose:** flip another user's `profiles.tier` (and write a `tier_change_log` audit row) from the in-app `/admin` route. Manual replacement for Stripe billing per [DEBT-001](../audits/debt.md).
+
+**Auth:** authenticated AND `profiles.is_admin = true`. The Edge Function verifies the JWT; the SECURITY DEFINER `flip_tier` SQL RPC enforces the admin check + self-flip guard atomically.
+
+**Request:**
+```ts
+type FlipTierRequest = {
+  target_user_id: string;             // UUID; must NOT equal caller's auth.uid()
+  new_tier: 'free' | 'pro' | 'admin'; // CHECK-constrained server-side
+  reason?: string;                    // ≤ 500 chars; persisted to tier_change_log.reason
+};
+```
+
+**Server-side flow:**
+1. Verify JWT → caller's `user_id`.
+2. Zod-parse the body (400 INVALID_PAYLOAD on failure).
+3. Call `flip_tier(target_user_id, new_tier, reason)` under the *user* JWT (so SECURITY DEFINER's `auth.uid()` resolves to the actor inside the admin check).
+4. Map RPC raise messages back to Edge error codes:
+   - `NOT_ADMIN` → 403 `FORBIDDEN_TIER`
+   - `SELF_FLIP_FORBIDDEN` → 403 `FORBIDDEN_RESOURCE`
+   - `TARGET_NOT_FOUND` → 404 `NOT_FOUND`
+   - `NO_CHANGE` / `INVALID_TIER` → 400 `INVALID_PAYLOAD`
+   - `UNAUTHENTICATED` → 401
+5. Return the inserted `tier_change_log.id` for audit-trail correlation.
+
+**Response data:**
+```ts
+type FlipTierResponse = {
+  log_id: string;                     // tier_change_log.id of the inserted audit row
+};
+```
+
+**By design (single-user beta):** an admin can flip any non-self user to any of `{free, pro, admin}` — including elevating another user to admin. This is per the migration body's intentional permissiveness; tighten when Stripe activates DEBT-001.
 
 ## Logging contract
 

@@ -64,9 +64,9 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const cards = [
-  { id: 'c1', target_text: 'hola', native_text: 'hello', language_code: 'es' },
-  { id: 'c2', target_text: 'gracias', native_text: 'thank you', language_code: 'es' },
-  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', language_code: 'es' },
+  { id: 'c1', target_text: 'hola', native_text: 'hello', ipa: null, language_code: 'es' },
+  { id: 'c2', target_text: 'gracias', native_text: 'thank you', ipa: null, language_code: 'es' },
+  { id: 'c3', target_text: 'adiós', native_text: 'goodbye', ipa: null, language_code: 'es' },
 ];
 
 describe('useComprehensionSession', () => {

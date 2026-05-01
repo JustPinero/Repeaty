@@ -128,6 +128,11 @@ export default function ComprehensionSessionPage() {
           <p className="text-3xl font-semibold tracking-tight">
             {session.currentCard?.target_text}
           </p>
+          {session.currentCard?.ipa && (
+            <p className="text-sm italic text-stone-500">
+              /{session.currentCard.ipa}/
+            </p>
+          )}
 
           {result ? (
             <div className="space-y-3 animate-flip-in">

@@ -48,6 +48,60 @@ describe('offline-queue', () => {
     expect(depth.pendingComprehensionAttempts).toBe(1);
   });
 
+  it('review replay is upsert-last-wins (client overwrites unconditionally)', async () => {
+    // Documents the v1 conflict-resolution contract: `useOfflineReplay` calls
+    // `supabase.from('reviews').upsert(..., { onConflict: 'user_id,card_id' })`
+    // and the queued row's `clientCreatedAt` is NOT compared against any
+    // server-side `last_reviewed_at`. The handler simply receives the row
+    // and acks. See references/repeaty-pwa.md § Offline queue.
+    await enqueueReview({
+      user_id: 'u-1',
+      card_id: 'c-1',
+      fsrs_state: { v: 1 },
+      ease: 2.5,
+      interval_days: 1,
+      due_at: '2026-05-02T00:00:00Z',
+      last_reviewed_at: '2026-05-01T00:00:00Z',
+    });
+    const handler = vi.fn().mockResolvedValue(true);
+    const result = await replayQueues({
+      replayReview: handler,
+      replayComprehension: vi.fn().mockResolvedValue(true),
+    });
+    expect(result.flushed).toBe(1);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('queued row exposes clientCreatedAt to the replay handler (forward-compat for compare-with-server.updated_at)', async () => {
+    // The conflict-resolution drift fix-request promises a future "skip
+    // upsert if server row is strictly newer than clientCreatedAt" rule.
+    // For that to be implementable without a queue-format migration, the
+    // handler must already receive `clientCreatedAt` on the row. Lock that
+    // in with an explicit assertion.
+    const before = Date.now();
+    await enqueueReview({
+      user_id: 'u-1',
+      card_id: 'c-1',
+      fsrs_state: { v: 1 },
+      ease: 2.5,
+      interval_days: 1,
+      due_at: '2026-05-02T00:00:00Z',
+      last_reviewed_at: '2026-05-01T00:00:00Z',
+    });
+    const after = Date.now();
+
+    const handler = vi.fn().mockResolvedValue(true);
+    await replayQueues({
+      replayReview: handler,
+      replayComprehension: vi.fn().mockResolvedValue(true),
+    });
+    expect(handler).toHaveBeenCalledTimes(1);
+    const row = handler.mock.calls[0]![0];
+    expect(typeof row.clientCreatedAt).toBe('number');
+    expect(row.clientCreatedAt).toBeGreaterThanOrEqual(before);
+    expect(row.clientCreatedAt).toBeLessThanOrEqual(after);
+  });
+
   it('replayQueues flushes successful items and removes them from the queue', async () => {
     await enqueueReview({
       user_id: 'u-1',
@@ -138,6 +192,54 @@ describe('offline-queue', () => {
       }),
     });
     expect(order).toEqual(['c-A', 'c-B']);
+  });
+
+  it('cursor-based drain picks up rows enqueued mid-handler in the same pass', async () => {
+    // Snapshot semantics (the old `.toArray()` impl) would NOT see the
+    // mid-handler insert until the next drain. The new `.each(...)` cursor
+    // re-reads the index, so a row added during iteration with an *older*
+    // `clientCreatedAt` than the in-progress row lands in the same pass.
+    await enqueueComprehension({
+      user_id: 'u-1',
+      card_id: 'c-A',
+      response_ms: 1500,
+      correct: true,
+    });
+
+    const order: string[] = [];
+    let injected = false;
+    const handler = vi.fn(async (row) => {
+      order.push(row.card_id);
+      if (!injected) {
+        injected = true;
+        // Slow handler simulates real network latency. While we sleep, add
+        // a 2nd row whose clientCreatedAt is OLDER than the row we just
+        // received (clock skew across tabs is the production analogue).
+        await new Promise((r) => setTimeout(r, 30));
+        await getOfflineDb().pending_comprehension_attempts.add({
+          user_id: 'u-1',
+          card_id: 'c-B',
+          response_ms: 2000,
+          correct: false,
+          clientCreatedAt: Date.now() - 1000,
+          attemptCount: 0,
+        });
+      }
+      return true;
+    });
+
+    await replayQueues({
+      replayReview: vi.fn().mockResolvedValue(true),
+      replayComprehension: handler,
+    });
+
+    // Both rows drained in the same replayQueues call; cursor caught the
+    // mid-handler insert.
+    expect(order).toContain('c-A');
+    expect(order).toContain('c-B');
+    expect(order).toHaveLength(2);
+    const depth = await queueDepth();
+    expect(depth.pendingComprehensionAttempts).toBe(0);
   });
 
   // ── Pronunciation queue (DEBT-008) ─────────────────────────────────────

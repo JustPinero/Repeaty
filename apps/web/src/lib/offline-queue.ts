@@ -10,9 +10,14 @@
  * succeeded, function failed) doesn't double-upload on retry — the
  * `uploaded_path` field is persisted between attempts.
  *
- * Conflict resolution: server wins. Each queued item carries its
- * `clientCreatedAt` so the replay loop can tell whether the local edit
- * predates a server-side change observed since.
+ * Conflict resolution (v1, single-user beta): client wins / last write
+ * wins. Review replay is a `supabase.from('reviews').upsert(...,
+ * { onConflict: 'user_id,card_id' })` that overwrites the server's row
+ * unconditionally; comprehension replay is a plain `insert`. Each queued
+ * item still carries its `clientCreatedAt` so a future "skip if server
+ * row is strictly newer" rule can compare against `reviews.last_reviewed_at`
+ * without a queue-format migration. Tracked in
+ * `requests/phase-6-fixes/fix-drift-replay-conflict-resolution.md`.
  */
 
 import Dexie, { type Table } from 'dexie';
@@ -188,66 +193,97 @@ export async function replayQueues(handlers: {
   let flushed = 0;
   let failed = 0;
 
-  // Drain in chronological order (clientCreatedAt asc) per queue.
+  // Drain in chronological order (clientCreatedAt asc) per queue. Use
+  // Dexie's cursor-based `each` rather than `toArray` so rows enqueued
+  // mid-drain (multi-tab, rapid online/offline flap) are picked up in the
+  // same pass instead of waiting for the next one — without it, a row whose
+  // `clientCreatedAt` sorts earlier than items still in a snapshot's tail
+  // (clock skew) would land out-of-order on the next pass.
   for (const queue of [
     'pending_reviews',
     'pending_comprehension_attempts',
     'pending_pronunciation_attempts',
   ] as const) {
-    const items = await db
+    // Each callback runs sequentially because we explicitly await inside.
+    // The promise returned by `.each(...)` resolves after every row in the
+    // index has been visited, including any added during iteration.
+    const processed: Array<Promise<void>> = [];
+    await db
       .table(queue)
       .orderBy('clientCreatedAt')
-      .toArray();
-
-    for (const item of items as Array<
-      QueuedReview | QueuedComprehension | QueuedPronunciation
-    >) {
-      let result: PronunciationReplayResult;
-      if (queue === 'pending_reviews') {
-        const ok = await handlers.replayReview(item as QueuedReview);
-        result = ok ? { ok: true } : { ok: false };
-      } else if (queue === 'pending_comprehension_attempts') {
-        const ok = await handlers.replayComprehension(item as QueuedComprehension);
-        result = ok ? { ok: true } : { ok: false };
-      } else if (handlers.replayPronunciation) {
-        result = await handlers.replayPronunciation(item as QueuedPronunciation);
-      } else {
-        // No pronunciation handler bound (test scenarios) — leave the row.
-        result = { ok: false };
-      }
-
-      if (result.ok) {
-        await db.table(queue).delete(item.id!);
-        flushed += 1;
-        continue;
-      }
-
-      // Failure paths.
-      // Persist the upload-checkpoint for pronunciation rows so the next
-      // pass doesn't double-upload.
-      const updates: Record<string, unknown> = {
-        attemptCount: item.attemptCount + 1,
-      };
-      if (
-        queue === 'pending_pronunciation_attempts' &&
-        'uploaded_path' in result &&
-        result.uploaded_path
-      ) {
-        updates.uploaded_path = result.uploaded_path;
-      }
-
-      if (item.attemptCount + 1 >= MAX_ATTEMPTS) {
-        // eslint-disable-next-line no-console
-        console.warn('[offline-queue] dropping unreplayable row', queue, item);
-        await db.table(queue).delete(item.id!);
-        failed += 1;
-      } else {
-        await db.table(queue).update(item.id!, updates);
-        failed += 1;
-      }
-    }
+      .each((row) => {
+        const task = processOne(
+          db,
+          queue,
+          row as QueuedReview | QueuedComprehension | QueuedPronunciation,
+          handlers,
+        ).then((tally) => {
+          flushed += tally.flushed;
+          failed += tally.failed;
+        });
+        processed.push(task);
+      });
+    // Drain the per-row work serialized: each `processOne` was kicked off
+    // synchronously inside `each`, so awaiting the array here flushes all
+    // of them before moving to the next queue.
+    await Promise.all(processed);
   }
   return { flushed, failed };
+}
+
+async function processOne(
+  db: RepeatyOfflineDB,
+  queue:
+    | 'pending_reviews'
+    | 'pending_comprehension_attempts'
+    | 'pending_pronunciation_attempts',
+  item: QueuedReview | QueuedComprehension | QueuedPronunciation,
+  handlers: {
+    replayReview: ReplayReviewFn;
+    replayComprehension: ReplayComprehensionFn;
+    replayPronunciation?: ReplayPronunciationFn;
+  },
+): Promise<{ flushed: number; failed: number }> {
+  let result: PronunciationReplayResult;
+  if (queue === 'pending_reviews') {
+    const ok = await handlers.replayReview(item as QueuedReview);
+    result = ok ? { ok: true } : { ok: false };
+  } else if (queue === 'pending_comprehension_attempts') {
+    const ok = await handlers.replayComprehension(item as QueuedComprehension);
+    result = ok ? { ok: true } : { ok: false };
+  } else if (handlers.replayPronunciation) {
+    result = await handlers.replayPronunciation(item as QueuedPronunciation);
+  } else {
+    // No pronunciation handler bound (test scenarios) — leave the row.
+    result = { ok: false };
+  }
+
+  if (result.ok) {
+    await db.table(queue).delete(item.id!);
+    return { flushed: 1, failed: 0 };
+  }
+
+  // Failure paths. Persist the upload-checkpoint for pronunciation rows so
+  // the next pass doesn't double-upload.
+  const updates: Record<string, unknown> = {
+    attemptCount: item.attemptCount + 1,
+  };
+  if (
+    queue === 'pending_pronunciation_attempts' &&
+    'uploaded_path' in result &&
+    result.uploaded_path
+  ) {
+    updates.uploaded_path = result.uploaded_path;
+  }
+
+  if (item.attemptCount + 1 >= MAX_ATTEMPTS) {
+    // eslint-disable-next-line no-console
+    console.warn('[offline-queue] dropping unreplayable row', queue, item);
+    await db.table(queue).delete(item.id!);
+    return { flushed: 0, failed: 1 };
+  }
+  await db.table(queue).update(item.id!, updates);
+  return { flushed: 0, failed: 1 };
 }
 
 /** Wipe all queues. Used by tests + the sign-out path. */

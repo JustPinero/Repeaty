@@ -14,6 +14,10 @@ export type ComprehensionCard = {
   id: string;
   target_text: string;
   native_text: string;
+  /** Phonetic anchor for ja/zh (kana romanization / pinyin). Null otherwise.
+   * Surfaced under the target prompt so Whisper-anchored learners aren't
+   * forced to guess the reading on glyph-only cards. */
+  ipa: string | null;
   language_code: string;
 };
 
@@ -75,7 +79,7 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
 
       const cardsRes = await supabase
         .from('cards')
-        .select('id, target_text, native_text, language_code')
+        .select('id, target_text, native_text, ipa, language_code')
         .eq('deck_id', deckId)
         .order('id');
       if (cardsRes.error) throw new Error(cardsRes.error.message);

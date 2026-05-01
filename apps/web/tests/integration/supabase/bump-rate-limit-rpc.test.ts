@@ -3,7 +3,6 @@ import {
   createTestUser,
   deleteTestUser,
   ensureIntegrationEnv,
-  getServiceClient,
   type TestUser,
 } from './_helpers';
 

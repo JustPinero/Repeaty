@@ -45,25 +45,21 @@ const deps: HandlerDeps = {
       .eq('id', userId)
       .maybeSingle();
     if (error || !data) return null;
-    // Pull cefr_level from the user's primary user_languages row. v1 picks
-    // the first one — Phase 6 surfaces a per-language lookup if needed.
-    const langs = await serviceClient
-      .from('user_languages')
-      .select('cefr_level')
-      .eq('user_id', userId)
-      .limit(1);
-    const cefr = (langs.data?.[0]?.cefr_level ?? 'A1') as
-      | 'A1'
-      | 'A2'
-      | 'B1'
-      | 'B2'
-      | 'C1'
-      | 'C2';
     return {
       tier: data.tier as 'free' | 'pro' | 'admin',
       native_language_code: (data.native_language_code as string) ?? 'en',
-      cefr_level: cefr,
     };
+  },
+
+  async getCefrForLanguage(userId: string, languageCode: string) {
+    const { data, error } = await serviceClient
+      .from('user_languages')
+      .select('cefr_level')
+      .eq('user_id', userId)
+      .eq('language_code', languageCode)
+      .maybeSingle();
+    if (error || !data) return 'A1';
+    return (data.cefr_level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2') ?? 'A1';
   },
 
   async getAttempt(kind, attemptId, jwt) {

@@ -45,6 +45,17 @@ export function useFeedback(input: FeedbackInput): FeedbackResult {
   const enabled =
     isPro && input.bucket !== 'perfect' && !!input.attemptId;
 
+  /** Use the canned-text helper for the free-tier / perfect-bucket / no-attemptId
+   * paths AND for the RATE_LIMITED edge-error case (the user has paid for
+   * coaching that's unavailable until tomorrow — a curated fallback beats
+   * silent null). UPSTREAM_TIMEOUT / UPSTREAM_FAILED keep returning null
+   * because they signal "AI is down right now" — surfacing canned text would
+   * mask that for the next debug session. */
+  const cannedFallback = (): string | null => {
+    const prefix = (input.nativeLanguageCode || '').toLowerCase().split('-')[0] ?? 'en';
+    return lookupFeedback({ bucket: input.bucket, nativeLangPrefix: prefix });
+  };
+
   const { data, isLoading } = useQuery<string | null>({
     queryKey: ['generate-feedback', input.kind, input.attemptId, profile?.id],
     enabled,
@@ -65,6 +76,9 @@ export function useFeedback(input: FeedbackInput): FeedbackResult {
       }
       const body = data;
       if (!body || body.error) {
+        if (body?.error?.code === 'RATE_LIMITED') {
+          return cannedFallback();
+        }
         // eslint-disable-next-line no-console
         console.warn('generate-feedback edge error', body?.error);
         return null;
@@ -77,9 +91,5 @@ export function useFeedback(input: FeedbackInput): FeedbackResult {
     return { text: data ?? null, isLoading };
   }
 
-  // Free tier, perfect bucket, or no attemptId → canned-text fallback.
-  // Same shape as Phase 3.
-  const prefix = (input.nativeLanguageCode || '').toLowerCase().split('-')[0] ?? 'en';
-  const fallback = lookupFeedback({ bucket: input.bucket, nativeLangPrefix: prefix });
-  return { text: fallback, isLoading: false };
+  return { text: cannedFallback(), isLoading: false };
 }

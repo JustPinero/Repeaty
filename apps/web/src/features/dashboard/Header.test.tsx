@@ -17,19 +17,10 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
+const profileMock = vi.fn();
 vi.mock('@/features/auth', () => ({
   useAuthUser: () => ({ user: { id: 'u-1' }, isLoading: false }),
-  useProfile: () => ({
-    profile: {
-      id: 'u-1',
-      display_name: 'Ben',
-      email: 'a@example.com',
-      native_language_code: 'en-US',
-      tier: 'free',
-      is_admin: false,
-    },
-    isLoading: false,
-  }),
+  useProfile: () => profileMock(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -64,11 +55,23 @@ function renderHeader(props: { displayName: string | null } = { displayName: 'Be
   return { ...utils, client };
 }
 
+const FREE_PROFILE = {
+  id: 'u-1',
+  display_name: 'Ben',
+  email: 'a@example.com',
+  native_language_code: 'en-US',
+  tier: 'free' as const,
+  is_admin: false,
+};
+const ADMIN_PROFILE = { ...FREE_PROFILE, tier: 'admin' as const, is_admin: true };
+
 describe('Header', () => {
   beforeEach(() => {
     signOutMock.mockReset();
     navigateMock.mockReset();
+    profileMock.mockReset();
     signOutMock.mockResolvedValue({ error: null });
+    profileMock.mockReturnValue({ profile: FREE_PROFILE, isLoading: false });
   });
 
   it('renders the user display name', () => {
@@ -123,5 +126,19 @@ describe('Header', () => {
     });
     expect(signOutMock).toHaveBeenCalledTimes(2);
     expect(signOutMock).toHaveBeenLastCalledWith({ scope: 'local' });
+  });
+
+  it('admin profile: renders the Admin link with href="/app/admin"', () => {
+    profileMock.mockReturnValue({ profile: ADMIN_PROFILE, isLoading: false });
+    renderHeader();
+    const link = screen.getByRole('link', { name: /^Admin$/ });
+    expect(link).toHaveAttribute('href', '/app/admin');
+    // Keyboard-reachable.
+    expect(link.tabIndex).not.toBe(-1);
+  });
+
+  it('non-admin profile: does NOT render the Admin link', () => {
+    renderHeader();
+    expect(screen.queryByRole('link', { name: /^Admin$/ })).toBeNull();
   });
 });

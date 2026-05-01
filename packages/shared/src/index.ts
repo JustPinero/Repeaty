@@ -34,6 +34,7 @@ export {
   type EdgeSuccessBody,
   type EdgeResponseBody,
 } from './edge-errors';
+export { stripFence } from './strip-fence';
 export {
   type FeedbackKind,
   type ComprehensionAttempt,
@@ -42,7 +43,6 @@ export {
   type FeedbackOutput,
   FeedbackOutputSchema,
   buildFeedbackPrompt,
-  stripFence,
 } from './feedback-prompt';
 export {
   type LessonCard,

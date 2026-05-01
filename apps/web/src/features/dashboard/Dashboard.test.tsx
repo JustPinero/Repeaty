@@ -17,19 +17,10 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
+const profileMock = vi.fn();
 vi.mock('@/features/auth', () => ({
   useAuthUser: () => useAuthUserMock(),
-  useProfile: () => ({
-    profile: {
-      id: 'u-1',
-      display_name: 'Ben',
-      email: 'ben@example.com',
-      native_language_code: 'en-US',
-      tier: 'free',
-      is_admin: false,
-    },
-    isLoading: false,
-  }),
+  useProfile: () => profileMock(),
 }));
 
 // Stub the ReviewQueue (it has its own tests). This keeps the Dashboard
@@ -50,19 +41,8 @@ function wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-function mockProfileQuery(displayName: string | null) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: { display_name: displayName },
-          error: null,
-        }),
-      }),
-    }),
-  };
-}
-
+// Dashboard now sources display_name + tier + is_admin from `useProfile`
+// (single source of truth). Only `user_languages` still hits supabase.from().
 function mockUserLanguagesQuery(codes: string[]) {
   return {
     select: vi.fn().mockReturnValue({
@@ -74,19 +54,38 @@ function mockUserLanguagesQuery(codes: string[]) {
   };
 }
 
+function mockUserLanguagesError(message: string) {
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: { message } }),
+    }),
+  };
+}
+
+const FREE_PROFILE = {
+  id: 'u-1',
+  display_name: 'Ben',
+  email: 'ben@example.com',
+  native_language_code: 'en-US',
+  tier: 'free' as const,
+  is_admin: false,
+};
+const PRO_PROFILE = { ...FREE_PROFILE, tier: 'pro' as const };
+
 describe('Dashboard', () => {
   beforeEach(() => {
     useAuthUserMock.mockReset();
     fromMock.mockReset();
+    profileMock.mockReset();
     useAuthUserMock.mockReturnValue({
       user: { id: 'u-1', email: 'a@example.com' },
       isLoading: false,
     });
+    profileMock.mockReturnValue({ profile: FREE_PROFILE, isLoading: false });
   });
 
   it('greets the user by display_name once profile loads', async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
       throw new Error(`unexpected table ${table}`);
     });
@@ -99,7 +98,6 @@ describe('Dashboard', () => {
 
   it('renders the review queue', async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
       throw new Error(`unexpected table ${table}`);
     });
@@ -112,7 +110,6 @@ describe('Dashboard', () => {
 
   it('shows the language selector only when the user has > 1 target language', async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es', 'fr']);
       throw new Error(`unexpected table ${table}`);
     });
@@ -125,7 +122,6 @@ describe('Dashboard', () => {
 
   it('does NOT show the language selector when only one target language', async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === 'profiles') return mockProfileQuery('Ben');
       if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
       throw new Error(`unexpected table ${table}`);
     });
@@ -137,20 +133,32 @@ describe('Dashboard', () => {
     expect(screen.queryByLabelText(/active language|studying/i)).not.toBeInTheDocument();
   });
 
-  it('shows an alert with a Retry button when the dashboard query fails', async () => {
+  it('Pro tier: renders the "Generate a lesson" CTA linking to /app/generate', async () => {
+    profileMock.mockReturnValue({ profile: PRO_PROFILE, isLoading: false });
     fromMock.mockImplementation((table: string) => {
-      if (table === 'profiles')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: null,
-                error: { message: 'network down' },
-              }),
-            }),
-          }),
-        };
-      if (table === 'user_languages') return mockUserLanguagesQuery([]);
+      if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
+      throw new Error(`unexpected table ${table}`);
+    });
+    render(<Dashboard />, { wrapper });
+    const link = await screen.findByRole('link', { name: /generate a lesson/i });
+    expect(link).toHaveAttribute('href', '/app/generate');
+  });
+
+  it('Free tier: does NOT render the Pro CTA', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_languages') return mockUserLanguagesQuery(['es']);
+      throw new Error(`unexpected table ${table}`);
+    });
+    render(<Dashboard />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByTestId('review-queue-stub')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('link', { name: /generate a lesson/i })).toBeNull();
+  });
+
+  it('shows an alert with a Retry button when the user_languages query fails', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_languages') return mockUserLanguagesError('network down');
       throw new Error(`unexpected table ${table}`);
     });
 

@@ -86,12 +86,5 @@ export function buildLessonPrompt(input: LessonPromptInput): {
   return { system: SYSTEM_PROMPT, user };
 }
 
-/** Local copy of the fence stripper (rather than re-exporting from
- * feedback-prompt) so Deno's strict TS resolution doesn't have to traverse
- * an extra relative path at type-check time. Same behavior. */
-export function stripFence(s: string): string {
-  return s
-    .replace(/^\s*```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/, '')
-    .trim();
-}
+// `stripFence` is the canonical helper in `./strip-fence.ts` — imported
+// directly there by Edge Functions and apps/web.

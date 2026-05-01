@@ -25,8 +25,9 @@ function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs
       Promise.resolve({
         tier: 'pro' as const,
         native_language_code: 'en-US',
-        cefr_level: 'A1' as const,
       }),
+    getCefrForLanguage: (_userId: string, _lang: string) =>
+      Promise.resolve('A1' as const),
     getAttempt: (_kind: 'comprehension' | 'pronunciation', _attemptId: string, _jwt: string) =>
       Promise.resolve(ATTEMPT_DATA),
     getCachedFeedback: (
@@ -94,7 +95,6 @@ Deno.test('returns 403 FORBIDDEN_TIER for free-tier callers', async () => {
         Promise.resolve({
           tier: 'free' as const,
           native_language_code: 'en-US',
-          cefr_level: 'A1' as const,
         }),
     }),
   );

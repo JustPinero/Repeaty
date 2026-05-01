@@ -122,12 +122,29 @@ describe('useFeedback (Phase-5 Claude swap)', () => {
     expect(result.current.text).toBeNull();
   });
 
-  it('Edge Function 429 RATE_LIMITED: returns null text', async () => {
+  it('Edge Function 429 RATE_LIMITED: falls back to canned text (not null)', async () => {
     profileMock.mockReturnValue({ profile: PRO_PROFILE, isLoading: false });
     invokeMock.mockResolvedValue({
       data: {
         data: null,
         error: { code: 'RATE_LIMITED', message: 'cap exceeded' },
+      },
+      error: null,
+    });
+    const { result } = call({ ...baseInput, bucket: 'miss', attemptId: 'a-1' });
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    expect(typeof result.current.text).toBe('string');
+    expect(result.current.text!.length).toBeGreaterThan(0);
+  });
+
+  it('Edge Function UPSTREAM_TIMEOUT: returns null text (AI-down signal)', async () => {
+    profileMock.mockReturnValue({ profile: PRO_PROFILE, isLoading: false });
+    invokeMock.mockResolvedValue({
+      data: {
+        data: null,
+        error: { code: 'UPSTREAM_TIMEOUT', message: 'aborted' },
       },
       error: null,
     });

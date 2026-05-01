@@ -8,9 +8,9 @@ import { z } from 'zod';
 import {
   buildLessonPrompt,
   LessonOutputSchema,
-  stripFence,
   type LessonOutput,
 } from '../../../packages/shared/src/lesson-prompt.ts';
+import { stripFence } from '../../../packages/shared/src/strip-fence.ts';
 import { handlePreflight } from '../_shared/cors.ts';
 import { jsonError, jsonSuccess } from '../_shared/error.ts';
 

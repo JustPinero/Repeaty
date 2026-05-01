@@ -63,6 +63,19 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
+### DEBT-006 — `pronunciation-session` E2E flow
+- **Date deferred:** 2026-05-01
+- **Originating phase / request:** Phase 4 audit gate / chore(5.0)
+- **What was deferred:** Flipping `pronunciation-session` to `complete` in `e2e-manifest.json`. The launchOptions args (`--use-fake-device-for-media-stream` + `--use-fake-ui-for-media-stream`) and the spec body (Stop click → score panel) are wired and run locally, but the `/app/decks` step in the spec — clicking the "Pronunciation practice" link — is flaky in CI: the bundled-decks query hasn't settled by the time the locator times out at 15s. Likely a post-onboarding auth-context-hydration race when the navigation is `page.goto('/app/decks')` rather than a same-app link click.
+- **Why deferred:** chore(5.0) bundled six other audit-deferred fixes; chasing the deck-list race without a CI trace artifact would have stalled the bundle. Reverting the manifest flip is the minimal safe move.
+- **To activate:**
+  1. Reproduce with Playwright trace on (`PWDEBUG=1` locally). The flake is between "onboarding complete" and "deck list visible".
+  2. Hypothesis A: the spec navigates via `page.goto('/app/decks')` while the onboarding mutation is still in flight; switch to `page.getByRole('link', { name: /your decks/i }).click()` from the dashboard once it's visible (matches the flashcard-review pattern).
+  3. Hypothesis B: a stale `decks` query enabled on a not-yet-hydrated `user.id`. Add `await expect(page.getByRole('heading', { name: /your decks/i })).toBeVisible()` before the link assertion.
+  4. Re-run CI once locally green; flip the manifest entry to `complete`.
+- **Estimated effort:** S (≤ 0.5 day with a CI trace in hand).
+- **Reversal pointer:** `chore(5.0): revert pronunciation-session E2E to in-progress` (this commit). The launch-flag wiring + spec body stay; only the manifest entry reverts.
+
 ### DEBT-005 — Free-tier audio file blob cleanup
 - **Date deferred:** 2026-04-30
 - **Originating phase / request:** Phase 4 / Request 4.6

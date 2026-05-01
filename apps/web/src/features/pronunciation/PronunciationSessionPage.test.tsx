@@ -13,7 +13,10 @@ vi.mock('./usePronunciationSession', () => ({
   usePronunciationSession: (...args: unknown[]) => sessionMock(...args),
   isDeckNotFoundError: (e: unknown) =>
     e instanceof Error && e.message === 'DECK_NOT_FOUND',
+  isOfflinePronunciationError: (e: unknown) =>
+    e instanceof Error && e.message === 'OFFLINE_PRONUNCIATION_UNSUPPORTED',
   DECK_NOT_FOUND: 'DECK_NOT_FOUND',
+  OFFLINE_PRONUNCIATION_UNSUPPORTED: 'OFFLINE_PRONUNCIATION_UNSUPPORTED',
 }));
 
 const canRecordMock = vi.fn(() => true);
@@ -154,6 +157,43 @@ describe('PronunciationSessionPage', () => {
 
     await waitFor(() => {
       expect(submitRecordingMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('offline: throwing OFFLINE_PRONUNCIATION_UNSUPPORTED renders the saved-offline message', async () => {
+    submitRecordingMock.mockRejectedValue(new Error('OFFLINE_PRONUNCIATION_UNSUPPORTED'));
+    sessionMock.mockReturnValue(baseSession);
+
+    const user = userEvent.setup();
+    renderAt('/app/decks/deck-1/pronunciation');
+
+    await user.click(screen.getByRole('button', { name: /start recording/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /stop recording/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: /stop recording/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/saved offline/i);
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent(/back online/i);
+  });
+
+  it('non-offline error: renders the generic error message verbatim', async () => {
+    submitRecordingMock.mockRejectedValue(new Error('upload broke'));
+    sessionMock.mockReturnValue(baseSession);
+
+    const user = userEvent.setup();
+    renderAt('/app/decks/deck-1/pronunciation');
+
+    await user.click(screen.getByRole('button', { name: /start recording/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /stop recording/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: /stop recording/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/upload broke/);
     });
   });
 

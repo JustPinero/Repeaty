@@ -97,8 +97,9 @@ Format per entry:
 
 ### DEBT-006 — `pronunciation-session` E2E flow
 - **Date deferred:** 2026-05-01
+- **Date resolved (attempt 2):** 2026-05-01
 - **Originating phase / request:** Phase 4 audit gate / chore(5.0)
-- **Status:** **STILL OPEN.** Resolution attempt 1 (Hypothesis B — explicit waits for `/app` URL + `Your decks` heading) shipped on debt-cleanup branch; CI surfaced a second race (MicCapture's `requesting → recording` transition not visible within 10s of the Record click) underneath it, so the manifest was reverted to `in-progress`. The next attempt needs Hypothesis A (same-app link click via the dashboard) AND a `data-testid` / aria signal on MicCapture's recording state.
+- **Resolution:** Both races addressed. (1) Dashboard gained a "Your decks →" link (`apps/web/src/features/dashboard/Dashboard.tsx`); the spec clicks that instead of `page.goto('/app/decks')`, so same-app routing keeps the auth context warm. (2) MicCapture's recording-state branch carries a `data-testid="mic-recording"` attribute; the spec waits on the testid rather than the Stop button's accessible name, so the wait fires the moment the state machine transitions (the button repaint can lag the state change in headless Chromium). `e2e-manifest.json` flipped to `complete`.
 - **What was deferred:** Flipping `pronunciation-session` to `complete` in `e2e-manifest.json`. The launchOptions args (`--use-fake-device-for-media-stream` + `--use-fake-ui-for-media-stream`) and the spec body (Stop click → score panel) are wired and run locally, but the `/app/decks` step in the spec — clicking the "Pronunciation practice" link — is flaky in CI: the bundled-decks query hasn't settled by the time the locator times out at 15s. Likely a post-onboarding auth-context-hydration race when the navigation is `page.goto('/app/decks')` rather than a same-app link click.
 - **Why deferred:** chore(5.0) bundled six other audit-deferred fixes; chasing the deck-list race without a CI trace artifact would have stalled the bundle. Reverting the manifest flip is the minimal safe move.
 - **To activate:**

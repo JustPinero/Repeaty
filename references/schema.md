@@ -118,7 +118,7 @@ FSRS state, one row per (user, card).
 
 **Indexes:** `idx_pron_user_card_created (user_id, card_id, created_at DESC)` for history view.
 **RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy — see `pronunciation-audio` § below.
-**Storage retention:** Cron job deletes audio files older than 7 days for free-tier users (kept indefinitely for Pro). `audio_storage_path` is set to NULL when the file is reaped, but the row stays for history. Lands in 0012 (Request 4.6).
+**Storage retention:** Daily pg_cron job `audio-retention-daily` (03:00 UTC) calls `purge_free_tier_audio()` which deletes `pronunciation-audio/${user_id}/...` files older than 7 days for `tier='free'` users and NULLs the `pronunciation_attempts.audio_storage_path` for those rows. Pro/admin audio is preserved indefinitely. Lands in 0012 (Request 4.6).
 
 ## Storage buckets
 

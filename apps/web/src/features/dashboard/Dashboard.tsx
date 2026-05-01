@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthUser, useProfile } from '@/features/auth';
 import { supabase } from '@/lib/supabase';
 import { Header } from './Header';
+import { InstallHint } from './InstallHint';
 import { PeatyGreeting } from './PeatyGreeting';
 import { LanguageSelector } from './LanguageSelector';
 import { ReviewQueue } from './ReviewQueue';
@@ -51,6 +52,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
+            <InstallHint />
             <PeatyGreeting displayName={displayName} />
             {userLanguages && userLanguages.length > 1 && (
               <div className="flex justify-center">

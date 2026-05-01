@@ -1,0 +1,19 @@
+{
+  "name": "Repeaty",
+  "short_name": "Repeaty",
+  "description": "Repeat after Peaty — flashcards, comprehension drills, and pronunciation feedback in one place.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff7e6",
+  "theme_color": "#7bbf3a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/peaty/peat-start.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

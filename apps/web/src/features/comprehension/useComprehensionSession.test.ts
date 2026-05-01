@@ -33,7 +33,11 @@ vi.mock('@/lib/supabase', () => ({
       }
       if (table === 'comprehension_attempts') {
         return {
-          insert: (...args: unknown[]) => attemptsInsert(...args),
+          insert: (...args: unknown[]) => ({
+            select: () => ({
+              single: () => attemptsInsert(...args),
+            }),
+          }),
         };
       }
       throw new Error(`unexpected table ${table}`);
@@ -66,7 +70,7 @@ describe('useComprehensionSession', () => {
     cardsResult.mockReset();
     attemptsInsert.mockReset();
     deckResult.mockResolvedValue({ data: { id: 'deck-1' }, error: null });
-    attemptsInsert.mockResolvedValue({ error: null });
+    attemptsInsert.mockResolvedValue({ data: { id: 'attempt-mock' }, error: null });
   });
 
   it('lands on the first card after the deck + cards fetch', async () => {

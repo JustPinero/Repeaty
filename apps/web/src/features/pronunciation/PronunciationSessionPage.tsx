@@ -133,6 +133,7 @@ export function PronunciationSessionPage() {
                 nativeText=""
                 userResponse={result.transcript}
                 nativeLanguageCode={NATIVE_LANG_PLACEHOLDER}
+                attemptId={result.attemptId}
               />
               {session.currentCard && (
                 <Link

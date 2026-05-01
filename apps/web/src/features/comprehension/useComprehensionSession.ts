@@ -23,6 +23,10 @@ export type CardResult = {
   responseMs: number;
   similarity: number;
   response: string;
+  /** Set after the comprehension_attempts insert succeeds. Phase-5 useFeedback
+   * keys the generate-feedback Edge Function on this. Null if the insert
+   * failed (offline / RLS bug) — feedback then falls back to canned text. */
+  attemptId: string | null;
 };
 
 export type ComprehensionProgress = {
@@ -129,6 +133,29 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
       });
       const score = comprehensionScore(sim, responseMs);
       const cardBucket = bucket(score);
+      // Persist the attempt. RLS policy `comp_insert_own` enforces that
+      // user_id = auth.uid(); we set it explicitly to keep the contract
+      // visible at the call site. `correct` is a coarse-grained boolean
+      // derived from the bucket — anything not 'miss' counts as correct
+      // for streak / dashboard purposes.
+      const inserted = await supabase
+        .from('comprehension_attempts')
+        .insert({
+          user_id: userId,
+          card_id: currentCard.id,
+          response_ms: responseMs,
+          correct: cardBucket !== 'miss',
+        })
+        .select('id')
+        .single();
+      if (inserted.error) {
+        // Don't block the UX on a persistence hiccup — log and continue.
+        console.error('comprehension_attempts insert failed', {
+          cardId: currentCard.id,
+          error: inserted.error,
+        });
+      }
+
       const result: CardResult = {
         cardId: currentCard.id,
         score,
@@ -136,26 +163,8 @@ export function useComprehensionSession(deckId: string): ComprehensionSessionSta
         responseMs,
         similarity: sim,
         response: trimmed,
+        attemptId: (inserted.data?.id as string | undefined) ?? null,
       };
-
-      // Persist the attempt. RLS policy `comp_insert_own` enforces that
-      // user_id = auth.uid(); we set it explicitly to keep the contract
-      // visible at the call site. `correct` is a coarse-grained boolean
-      // derived from the bucket — anything not 'miss' counts as correct
-      // for streak / dashboard purposes.
-      const { error: insertError } = await supabase
-        .from('comprehension_attempts')
-        .insert({
-          user_id: userId,
-          card_id: currentCard.id,
-          response_ms: responseMs,
-          correct: cardBucket !== 'miss',
-        });
-      if (insertError) {
-        // Don't block the UX on a persistence hiccup — log and continue.
-        // Future Phase-6 offline queue (Dexie) will absorb retry semantics.
-        console.error('comprehension_attempts insert failed', { cardId: currentCard.id, error: insertError });
-      }
 
       setPendingResult(result);
       submittingRef.current = false;

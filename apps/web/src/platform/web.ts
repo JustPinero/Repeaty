@@ -14,7 +14,29 @@ function ttsCacheKey(text: string, lang: string): string {
   return `${lang}|${text}`;
 }
 
+/** LRU-bounded so a long study session can't grow the cache without bound.
+ * 64 entries × ~25 KB-per-clip ≈ 1.6 MB worst case. Repeats inside a deck
+ * still cache-hit; older entries fall out as new clips land. */
+const TTS_CACHE_MAX = 64;
 const ttsBlobCache = new Map<string, Blob>();
+function ttsCacheGet(key: string): Blob | undefined {
+  const v = ttsBlobCache.get(key);
+  if (v !== undefined) {
+    // Touch — move to most-recent by re-inserting.
+    ttsBlobCache.delete(key);
+    ttsBlobCache.set(key, v);
+  }
+  return v;
+}
+function ttsCacheSet(key: string, blob: Blob): void {
+  if (ttsBlobCache.has(key)) ttsBlobCache.delete(key);
+  ttsBlobCache.set(key, blob);
+  while (ttsBlobCache.size > TTS_CACHE_MAX) {
+    const oldest = ttsBlobCache.keys().next().value;
+    if (oldest === undefined) break;
+    ttsBlobCache.delete(oldest);
+  }
+}
 
 function shouldUseProTts(lang: string): boolean {
   const prefix = lang.toLowerCase().split('-')[0];
@@ -23,7 +45,7 @@ function shouldUseProTts(lang: string): boolean {
 
 async function fetchProTts(text: string, lang: string, signal: AbortSignal): Promise<Blob | null> {
   const key = ttsCacheKey(text, lang);
-  const cached = ttsBlobCache.get(key);
+  const cached = ttsCacheGet(key);
   if (cached) return cached;
 
   // supabase-js's `functions.invoke` returns text/json by default; for binary
@@ -55,7 +77,7 @@ async function fetchProTts(text: string, lang: string, signal: AbortSignal): Pro
     return null;
   }
   const blob = await response.blob();
-  ttsBlobCache.set(key, blob);
+  ttsCacheSet(key, blob);
   return blob;
 }
 

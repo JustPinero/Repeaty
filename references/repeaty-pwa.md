@@ -94,13 +94,14 @@ Two runtime-caching rules + the install-time precache:
 
 `skipWaiting: true` + `clientsClaim: true` — a freshly-deployed SW takes over without a reload prompt. Acceptable for v1 (single user, low cadence of breaking changes); revisit if the Capacitor wrap or a multi-tenant beta lands.
 
-### Offline queue (Phase 6)
+### Offline queue (Phase 6 + post-launch maintenance)
 
-Dexie holds two queues in v1:
-- `pending_reviews` — review ratings the user submitted while offline. On reconnect, replay in chronological order (`clientCreatedAt` asc). Replay calls `supabase.from('reviews').upsert(..., { onConflict: 'user_id,card_id' })` — current behavior is "client wins on the upsert" (server's row gets overwritten unconditionally). The original spec promised a stricter "client overwrites only when client row is strictly older" rule; that's tracked as a Phase-6 fix request.
-- `pending_comprehension_attempts` — small JSON payloads. On reconnect, plain insert. RLS-rejected rows leave the queue with a bumped `attemptCount`; the poison-pill defense drops a row after 5 failed attempts.
+Dexie holds three queues:
+- `pending_reviews` — review ratings the user submitted while offline. On reconnect, replay in chronological order (`clientCreatedAt` asc, via Dexie cursor so mid-drain enqueues are picked up). Replay calls `supabase.from('reviews').upsert(..., { onConflict: 'user_id,card_id' })` — "client wins on the upsert" (server's row gets overwritten unconditionally). Each queued row preserves `clientCreatedAt` so a future "skip if server row strictly newer" rule can compare without a queue-format migration.
+- `pending_comprehension_attempts` — small JSON payloads. On reconnect, plain insert.
+- `pending_pronunciation_attempts` — DEBT-008 active. Carries the audio Blob in IndexedDB. Two-stage replay: (1) `uploadPronunciationBlob` if `uploaded_path` is empty, (2) `supabase.functions.invoke('score-pronunciation', ...)` with the path. On partial failure (upload OK, function call fails) the resolved upload path persists in the queued row so the next attempt skips re-upload.
 
-`pending_pronunciation_attempts` was scoped for v1 but is deferred to [DEBT-008](../audits/debt.md) — re-uploading the audio Blob plus re-invoking `score-pronunciation` plus handling 401 between the two steps is a meaningfully larger replay state machine than the two simple-write queues. Pronunciation attempts made while offline currently fail at the upload step; the user sees a generic recording-error UX.
+RLS-rejected rows leave the queue with a bumped `attemptCount`; the poison-pill defense drops a row after 5 failed attempts (with a console warning). The drain loop uses a "fetch next-earliest → process → repeat with visited-id guard" pattern rather than a snapshot, so rows enqueued mid-drain (multi-tab, rapid offline flap) are picked up in the same pass.
 
 The queue replay is a state machine, not a "fire and forget" — Supabase 401 (re-auth) leaves items in the queue with a bumped `attemptCount` rather than losing them; after 5 retries the row is dropped (poison-pill defense, with a console warning) so a single bad row can't block the queue indefinitely.
 

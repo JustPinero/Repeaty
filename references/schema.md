@@ -110,7 +110,7 @@ FSRS state, one row per (user, card).
 | id                | UUID PK                           |                                                      |
 | user_id           | UUID FK auth.users                |                                                      |
 | card_id           | UUID FK cards                     |                                                      |
-| audio_storage_path| TEXT NOT NULL                     | path in Supabase Storage bucket `pronunciation-audio` |
+| audio_storage_path| TEXT NULL                         | path in Supabase Storage bucket `pronunciation-audio`. Nullable: NULLed by the retention job when the file is reaped (per 0014; was NOT NULL in 0005) |
 | whisper_transcript| TEXT NOT NULL                     |                                                      |
 | similarity_score  | REAL NOT NULL                     | 0.0–1.0 normalized Levenshtein for v1                |
 | feedback_text     | TEXT NULL                         | populated only for Pro tier                          |

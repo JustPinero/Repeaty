@@ -3,17 +3,25 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   canQueue,
   replayQueues,
+  type PronunciationReplayResult,
   type QueuedComprehension,
+  type QueuedPronunciation,
   type QueuedReview,
 } from './offline-queue';
 import { supabase } from './supabase';
+import { uploadPronunciationBlob } from '@/features/pronunciation';
 
 /**
  * Mount once at the app shell. Listens for `online` events and drains the
- * Dexie offline queues by calling supabase upsert/insert for each queued
- * row. Per-row failures (RLS / 4xx) leave the row in the queue with an
- * incremented attemptCount; after 5 failures the row is dropped per the
- * `replayQueues` poison-pill defense.
+ * Dexie offline queues by calling supabase upsert/insert/Edge-Function for
+ * each queued row. Per-row failures (RLS / 4xx / Anthropic 5xx) leave the
+ * row in the queue with an incremented attemptCount; after 5 failures the
+ * row is dropped per the `replayQueues` poison-pill defense.
+ *
+ * Pronunciation queueing is two-staged: upload to Storage, then invoke
+ * `score-pronunciation`. If the upload succeeds but the function call
+ * fails, the upload path persists in the queued row so the next attempt
+ * skips re-upload.
  */
 export function useOfflineReplay(): void {
   const qc = useQueryClient();
@@ -30,11 +38,14 @@ export function useOfflineReplay(): void {
         const result = await replayQueues({
           replayReview: (row: QueuedReview) => upsertReview(row),
           replayComprehension: (row: QueuedComprehension) => insertComprehension(row),
+          replayPronunciation: (row: QueuedPronunciation) => uploadAndScore(row),
         });
         if (result.flushed > 0) {
           // Trigger any cached dashboard / due-cards / history queries to
-          // refetch — server state has changed.
-          qc.invalidateQueries({ queryKey: ['due-cards-summary'] });
+          // refetch — server state has changed. Key must match the actual
+          // useDueCards hook (`['due-cards', userId]`), not the SQL
+          // function name (`due_cards_summary`).
+          qc.invalidateQueries({ queryKey: ['due-cards'] });
           qc.invalidateQueries({ queryKey: ['card-comprehension-history'] });
           qc.invalidateQueries({ queryKey: ['card-pronunciation-history'] });
         }
@@ -94,4 +105,46 @@ async function insertComprehension(row: QueuedComprehension): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+async function uploadAndScore(
+  row: QueuedPronunciation,
+): Promise<PronunciationReplayResult> {
+  // Stage 1: upload to Storage. Skip if a prior attempt already uploaded.
+  let path = row.uploaded_path;
+  if (!path) {
+    try {
+      path = await uploadPronunciationBlob(row.audio_blob, {
+        userId: row.user_id,
+        cardId: row.card_id,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[offline-replay] pronunciation upload failed',
+        err instanceof Error ? err.message : err,
+      );
+      return { ok: false };
+    }
+  }
+
+  // Stage 2: invoke score-pronunciation. If this step fails, persist the
+  // upload path so the next attempt skips re-upload.
+  type EdgeBody = {
+    data: { attempt_id: string } | null;
+    error: { code: string; message: string } | null;
+  };
+  const invoked = await supabase.functions.invoke<EdgeBody>(
+    'score-pronunciation',
+    { body: { card_id: row.card_id, audio_storage_path: path } },
+  );
+  if (invoked.error || !invoked.data || invoked.data.error) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[offline-replay] score-pronunciation failed',
+      invoked.error?.message ?? invoked.data?.error?.message,
+    );
+    return { ok: false, uploaded_path: path };
+  }
+  return { ok: true };
 }

@@ -26,7 +26,17 @@ vi.mock('@/features/pronunciation/storage', () => ({
   MAX_AUDIO_BYTES: 10 * 1024 * 1024,
 }));
 
-import { usePronunciationSession, DECK_NOT_FOUND } from './usePronunciationSession';
+const enqueuePronunciationMock = vi.fn(async (_payload: unknown) => {});
+vi.mock('@/lib/offline-queue', () => ({
+  enqueuePronunciation: (payload: unknown) => enqueuePronunciationMock(payload),
+}));
+
+import {
+  usePronunciationSession,
+  DECK_NOT_FOUND,
+  OFFLINE_PRONUNCIATION_UNSUPPORTED,
+  isOfflinePronunciationError,
+} from './usePronunciationSession';
 
 function makeWrapper() {
   const client = new QueryClient({
@@ -258,5 +268,50 @@ describe('usePronunciationSession', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.isComplete).toBe(true);
     expect(result.current.progress.total).toBe(0);
+  });
+
+  it('offline: enqueues to the Dexie queue and throws OFFLINE_PRONUNCIATION_UNSUPPORTED', async () => {
+    const originalOnLine = Object.getOwnPropertyDescriptor(window.navigator, 'onLine');
+    Object.defineProperty(window.navigator, 'onLine', {
+      value: false,
+      configurable: true,
+    });
+    try {
+      setupSupabase();
+      enqueuePronunciationMock.mockReset();
+      const { result } = renderHook(() => usePronunciationSession('deck-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      let caught: unknown = null;
+      await act(async () => {
+        try {
+          await result.current.submitRecording(FAKE_BLOB);
+        } catch (err) {
+          caught = err;
+        }
+      });
+      expect(isOfflinePronunciationError(caught)).toBe(true);
+      expect((caught as Error).message).toBe(OFFLINE_PRONUNCIATION_UNSUPPORTED);
+
+      // Persisted to the queue.
+      expect(enqueuePronunciationMock).toHaveBeenCalledTimes(1);
+      const payload = (enqueuePronunciationMock.mock.calls[0]?.[0] ?? {}) as Record<
+        string,
+        unknown
+      >;
+      expect(payload.user_id).toBe('user-aaa');
+      expect(payload.card_id).toBe('card-1');
+      expect(payload.audio_blob).toBe(FAKE_BLOB);
+
+      // Did NOT attempt the online upload or Edge Function call.
+      expect(uploadMock).not.toHaveBeenCalled();
+      expect(invokeMock).not.toHaveBeenCalled();
+    } finally {
+      if (originalOnLine) {
+        Object.defineProperty(window.navigator, 'onLine', originalOnLine);
+      }
+    }
   });
 });

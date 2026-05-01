@@ -39,7 +39,7 @@ export function PronunciationSessionPage() {
       const isOffline = isOfflinePronunciationError(err);
       setRecordingError(
         isOffline
-          ? 'Pronunciation practice needs a connection. Reconnect and try again.'
+          ? 'Saved offline. Your score will land when you\'re back online.'
           : err instanceof Error
             ? err.message
             : 'Recording failed. Try again.',

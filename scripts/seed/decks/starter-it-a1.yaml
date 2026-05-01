@@ -1,0 +1,39 @@
+# Italian — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index.
+id: starter-it-a1
+name: Italian — Starter (A1)
+language_code: it
+cefr_level: A1
+cards:
+  - { target: ciao, native: hello }
+  - { target: buongiorno, native: good morning }
+  - { target: buon pomeriggio, native: good afternoon }
+  - { target: buonasera, native: good evening }
+  - { target: arrivederci, native: goodbye }
+  - { target: a dopo, native: see you later }
+  - { target: sì, native: "yes" }
+  - { target: "no", native: "no" }
+  - { target: grazie, native: thank you }
+  - { target: prego, native: you're welcome }
+  - { target: per favore, native: please }
+  - { target: uno, native: one }
+  - { target: due, native: two }
+  - { target: tre, native: three }
+  - { target: quattro, native: four }
+  - { target: cinque, native: five }
+  - { target: sei, native: six }
+  - { target: sette, native: seven }
+  - { target: otto, native: eight }
+  - { target: nove, native: nine }
+  - { target: dieci, native: ten }
+  - { target: lunedì, native: Monday }
+  - { target: martedì, native: Tuesday }
+  - { target: mercoledì, native: Wednesday }
+  - { target: giovedì, native: Thursday }
+  - { target: venerdì, native: Friday }
+  - { target: sabato, native: Saturday }
+  - { target: domenica, native: Sunday }
+  - { target: rosso, native: red }
+  - { target: blu, native: blue }

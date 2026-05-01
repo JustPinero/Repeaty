@@ -1,0 +1,42 @@
+# Mandarin Chinese — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# Simplified characters (Mainland convention). IPA = Pinyin with tone numbers
+# (e.g. nǐ hǎo → ni3 hao3) — matches what Whisper's transcript will tend to
+# produce after our NFKC fold.
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index.
+id: starter-zh-a1
+name: Mandarin — Starter (A1)
+language_code: zh
+cefr_level: A1
+cards:
+  - { target: 你好, native: hello, ipa: nǐ hǎo }
+  - { target: 早上好, native: good morning, ipa: zǎoshang hǎo }
+  - { target: 下午好, native: good afternoon, ipa: xiàwǔ hǎo }
+  - { target: 晚上好, native: good evening, ipa: wǎnshang hǎo }
+  - { target: 再见, native: goodbye, ipa: zàijiàn }
+  - { target: 待会见, native: see you later, ipa: dāihuì jiàn }
+  - { target: 是, native: "yes", ipa: shì }
+  - { target: 不是, native: "no", ipa: bù shì }
+  - { target: 谢谢, native: thank you, ipa: xièxie }
+  - { target: 不客气, native: you're welcome, ipa: bù kèqi }
+  - { target: 请, native: please, ipa: qǐng }
+  - { target: 一, native: one, ipa: yī }
+  - { target: 二, native: two, ipa: èr }
+  - { target: 三, native: three, ipa: sān }
+  - { target: 四, native: four, ipa: sì }
+  - { target: 五, native: five, ipa: wǔ }
+  - { target: 六, native: six, ipa: liù }
+  - { target: 七, native: seven, ipa: qī }
+  - { target: 八, native: eight, ipa: bā }
+  - { target: 九, native: nine, ipa: jiǔ }
+  - { target: 十, native: ten, ipa: shí }
+  - { target: 星期一, native: Monday, ipa: xīngqī yī }
+  - { target: 星期二, native: Tuesday, ipa: xīngqī èr }
+  - { target: 星期三, native: Wednesday, ipa: xīngqī sān }
+  - { target: 星期四, native: Thursday, ipa: xīngqī sì }
+  - { target: 星期五, native: Friday, ipa: xīngqī wǔ }
+  - { target: 星期六, native: Saturday, ipa: xīngqī liù }
+  - { target: 星期日, native: Sunday, ipa: xīngqī rì }
+  - { target: 红色, native: red, ipa: hóngsè }
+  - { target: 蓝色, native: blue, ipa: lánsè }

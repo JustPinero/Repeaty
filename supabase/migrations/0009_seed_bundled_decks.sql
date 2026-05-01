@@ -3,6 +3,285 @@
 -- Edit scripts/seed/decks/*.yaml and run `pnpm seed:decks`.
 -- See scripts/seed/README.md for the workflow + idempotency rules.
 
+-- ──── German — Starter (A1) (de · A1) ────
+insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
+values ('5c37d4e1-caa8-5a92-9095-bceaba24913f', 'German — Starter (A1)', 'de', 'A1', 'bundled', null)
+on conflict (id) do update set
+  name = excluded.name,
+  language_code = excluded.language_code,
+  cefr_level = excluded.cefr_level;
+
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4ca75203-6ef8-5c58-835a-e00390d205da', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'hallo', 'hello', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0e1a7d67-12e8-573c-b6c9-851206b43328', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'guten Morgen', 'good morning', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('01c37fc8-040f-5a44-b65a-6d7ac8f5f2b2', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'guten Tag', 'good afternoon', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b48daf28-b6b8-58d6-bbdc-384b3966bc98', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'guten Abend', 'good evening', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e116da60-d77d-553e-95d1-a7ac9b082e92', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'tschüss', 'goodbye', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7e04b186-62c2-529d-ab81-d91b73bf3b14', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'bis später', 'see you later', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('29fa0284-8e66-50c0-9af0-26ba99af3b2f', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'ja', 'yes', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('737f86da-ea39-51b6-864e-1af6a367ca66', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'nein', 'no', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e7cae57f-3608-5404-a0fa-821dd39c6d2f', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'danke', 'thank you', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4f10d8ad-b674-5bac-96ae-8b0be729af24', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'bitte schön', 'you''re welcome', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0ff16ea6-2234-54dc-aedd-1081ce7faf48', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'bitte', 'please', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('2dc656d2-feb5-5486-b69e-a3f232fc65ce', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'eins', 'one', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4ad50a11-3aac-53a6-8bd9-ffbef09a5e3f', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'zwei', 'two', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7f19b600-ef15-5c9e-ab7c-9514d5841e53', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'drei', 'three', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('57724781-7685-537d-9aa7-980db543c076', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'vier', 'four', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f6c1a688-88e1-541a-a78e-28807d24e432', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'fünf', 'five', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('70780656-8716-50c4-b807-96c4b5373243', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'sechs', 'six', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e7c3222a-e158-5927-bfdc-ba3cfefcbbc5', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'sieben', 'seven', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4e72d0e7-79d8-5d03-91bd-73b59229c988', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'acht', 'eight', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5a38a78b-d38d-537f-945a-6206857f5e3a', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'neun', 'nine', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('090e2f06-d60b-5fe9-b50a-9a8c98309b59', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'zehn', 'ten', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a6253fa0-8cbc-55c7-adc7-ed65583c0796', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Montag', 'Monday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('949c7094-4bbe-59d1-838d-bdfa2ca3160f', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Dienstag', 'Tuesday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0f5a094f-bd1b-5aaa-9312-8a1014f60071', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Mittwoch', 'Wednesday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b9d00556-d5fe-523d-b599-533a2f2c332e', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Donnerstag', 'Thursday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('ffc5bc54-ea72-5676-83ed-fc1cc2623a98', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Freitag', 'Friday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('66a240a4-f499-56cf-9712-bf5103c85d61', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Samstag', 'Saturday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('058dab17-3ade-5eff-bb67-90413ddebf4a', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'Sonntag', 'Sunday', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('da00dcac-ebca-5454-b74e-76e1321e5140', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'rot', 'red', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9f900d37-e745-566a-aacd-47f237d6ebc3', '5c37d4e1-caa8-5a92-9095-bceaba24913f', 'blau', 'blue', null, null, null, 'de')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+
 -- ──── Spanish — Starter (A1) (es · A1) ────
 insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
 values ('5b13ed77-a9ed-5567-abc3-9674c5589fd2', 'Spanish — Starter (A1)', 'es', 'A1', 'bundled', null)
@@ -553,6 +832,1113 @@ on conflict (id) do update set
   language_code = excluded.language_code;
 insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
 values ('2e8df498-fcaf-5bca-b06f-22feadf9d761', 'fd0d0d53-5f2b-5817-989b-a8bdd335ca2b', 'bleu', 'blue', null, null, null, 'fr')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+
+-- ──── Italian — Starter (A1) (it · A1) ────
+insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
+values ('e3376f1f-39a4-54f2-ac61-88209bd4253c', 'Italian — Starter (A1)', 'it', 'A1', 'bundled', null)
+on conflict (id) do update set
+  name = excluded.name,
+  language_code = excluded.language_code,
+  cefr_level = excluded.cefr_level;
+
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('1fc1474c-c464-5c89-9dc8-05f9ad1d34ba', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'ciao', 'hello', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8f68dbf9-93bc-5dc3-bbb0-1b7e58d1d32e', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'buongiorno', 'good morning', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('649e7365-8b19-56d5-a727-f081fb9d8296', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'buon pomeriggio', 'good afternoon', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0226c6a6-1b97-5022-b898-2cfb5ac8a366', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'buonasera', 'good evening', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('535d9eb0-bb65-5f36-b84d-9fc3bdfcdc30', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'arrivederci', 'goodbye', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8ae972a0-7273-5acd-b0a1-9536d3abaf1b', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'a dopo', 'see you later', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('3dbc69e0-206c-545a-8872-715d7ce18e4a', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'sì', 'yes', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a1f85aa0-9b9c-5525-92bc-3b5d20b56638', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'no', 'no', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b012b545-8f83-5a7a-b4f7-22e6fcfeeca2', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'grazie', 'thank you', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8e2c0ec7-004b-5e08-819c-4a9d8626f0f9', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'prego', 'you''re welcome', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a3165b7a-5939-55db-9007-f422b08853f0', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'per favore', 'please', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a957e5a5-4a9a-5a71-8695-0cb84894a254', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'uno', 'one', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f0f9f728-4d35-5b0b-9fea-667a2f311e48', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'due', 'two', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('bf7d4523-e31c-5da5-802d-9a43f056a779', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'tre', 'three', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('2de4bfd2-b31d-52d9-8f96-071eff9c68c6', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'quattro', 'four', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5cb71c23-0158-5b2a-9560-d031f9279d46', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'cinque', 'five', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('66433db5-7ac3-5c34-bf06-fb4522247003', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'sei', 'six', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9a36063c-c45a-565c-b72a-fdc9e1940ca8', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'sette', 'seven', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('82da8fef-2730-5cec-9f22-5d5b48572053', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'otto', 'eight', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0f179318-8135-556d-bdf3-b61a8d016047', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'nove', 'nine', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f369a1c9-fb24-5337-9d86-f9caefdb3110', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'dieci', 'ten', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4df8d0f6-2acd-5eec-899a-d8a70b995ef8', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'lunedì', 'Monday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('293f61dc-996e-5e2e-b765-7abe6e64b60b', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'martedì', 'Tuesday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7b2a1606-820c-5be7-845f-b61d6c98d5d7', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'mercoledì', 'Wednesday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('bfcf94e9-a565-5831-a312-786dddf6fda7', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'giovedì', 'Thursday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('6c6d010e-7e40-527b-ac6d-5bef42418d2d', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'venerdì', 'Friday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f3cae9c0-fe99-55f5-984c-b14d7c54d3ee', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'sabato', 'Saturday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4add2461-5f78-54c6-bf2c-a610136b641d', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'domenica', 'Sunday', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('c7b275e7-35d0-53b6-868b-4040a1c7b821', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'rosso', 'red', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b523762a-e77d-509d-944c-fa49394f3793', 'e3376f1f-39a4-54f2-ac61-88209bd4253c', 'blu', 'blue', null, null, null, 'it')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+
+-- ──── Japanese — Starter (A1) (ja · A1) ────
+insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
+values ('5fac0122-ea23-57ad-8971-4ab71eb4982c', 'Japanese — Starter (A1)', 'ja', 'A1', 'bundled', null)
+on conflict (id) do update set
+  name = excluded.name,
+  language_code = excluded.language_code,
+  cefr_level = excluded.cefr_level;
+
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0050d93a-2745-5e5a-a012-91b866f6dda2', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'こんにちは', 'hello', 'konnichiwa', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('6fc65808-5e74-5bd9-bd73-06cfe814c55b', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'おはようございます', 'good morning', 'ohayou gozaimasu', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('3b6d6eb0-7b54-5d8e-bf5f-707550149ad9', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'こんにちは', 'good afternoon', 'konnichiwa', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9c8349d1-e3de-5895-a008-2ac1589a96b5', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'こんばんは', 'good evening', 'konbanwa', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e6a053bc-0620-5591-8a79-b8658b751218', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'さようなら', 'goodbye', 'sayounara', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('ec4bfb85-be0e-558d-a76d-d1555fe26e30', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'またね', 'see you later', 'matane', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('c042911b-f8d6-59cd-b3d2-43e5b499936d', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'はい', 'yes', 'hai', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('adbd02fb-7b3d-5677-ace2-8dd8c61dd878', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'いいえ', 'no', 'iie', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('441aa894-e9da-5830-a710-d51d66de6056', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'ありがとう', 'thank you', 'arigatou', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('68a208de-0465-5c51-9dd8-009597e6a7bc', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'どういたしまして', 'you''re welcome', 'douitashimashite', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4f39260a-0592-581e-b003-f7744001c9af', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'お願いします', 'please', 'onegaishimasu', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('d678b274-2463-5445-bcab-2ca71ee1030f', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'いち', 'one', 'ichi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('841461cf-edcf-5328-8a82-850b9fdab1d9', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'に', 'two', 'ni', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('17e193a0-f6a6-51d1-852d-cc86faedc9bb', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'さん', 'three', 'san', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('3eb7eecd-1aee-5541-b376-8d8c135f0cbe', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'し', 'four', 'shi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5455f81b-6536-59a4-9dd8-0f1d4b5bca03', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'ご', 'five', 'go', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('533272c1-0ff4-5a99-9294-027dccdf4274', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'ろく', 'six', 'roku', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('64de7330-e2cb-5834-bbc2-38631e297e94', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'しち', 'seven', 'shichi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8a54ed9d-875c-5a4e-a353-2c33aae5bca4', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'はち', 'eight', 'hachi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9eb53f39-52d1-5f54-b39d-af4cd6243168', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'きゅう', 'nine', 'kyuu', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('dcf08397-c90d-5398-94b5-299fc96d9c62', '5fac0122-ea23-57ad-8971-4ab71eb4982c', 'じゅう', 'ten', 'juu', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('098c4fc7-6713-55d9-861a-de5971870709', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '月曜日', 'Monday', 'getsuyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0dbde855-787d-50db-ad40-9b8a41df661d', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '火曜日', 'Tuesday', 'kayoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e49d6f82-fff0-5d5d-b529-4bdfef64d428', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '水曜日', 'Wednesday', 'suiyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('fbab040b-722d-566c-b3d4-1ddeae93843e', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '木曜日', 'Thursday', 'mokuyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('572e8471-cbe7-5772-98b3-2fa5040fc9e9', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '金曜日', 'Friday', 'kinyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e6709ceb-eb89-5882-9ed3-5f526f7e0075', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '土曜日', 'Saturday', 'doyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5ea494f1-e5c5-5d47-8a11-6cfa083f6be0', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '日曜日', 'Sunday', 'nichiyoubi', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8f871edb-f522-5724-b5f8-a92a5dd8e332', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '赤', 'red', 'aka', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b7a8e5fe-be58-5d20-a888-00396a1c30a3', '5fac0122-ea23-57ad-8971-4ab71eb4982c', '青', 'blue', 'ao', null, null, 'ja')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+
+-- ──── Russian — Starter (A1) (ru · A1) ────
+insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
+values ('97548fca-a325-58de-a4ea-3d2b89876116', 'Russian — Starter (A1)', 'ru', 'A1', 'bundled', null)
+on conflict (id) do update set
+  name = excluded.name,
+  language_code = excluded.language_code,
+  cefr_level = excluded.cefr_level;
+
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9d24ad2f-2084-58c8-bb54-abdcb0d4fa25', '97548fca-a325-58de-a4ea-3d2b89876116', 'привет', 'hello', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('3104797a-e49f-5c68-a77b-45b6fa76acf2', '97548fca-a325-58de-a4ea-3d2b89876116', 'доброе утро', 'good morning', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('2a1e6b8d-fbd9-5834-bbc1-d7aa7b8f7db8', '97548fca-a325-58de-a4ea-3d2b89876116', 'добрый день', 'good afternoon', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b49f453f-3b8f-51ec-b3f3-d2d3a163657b', '97548fca-a325-58de-a4ea-3d2b89876116', 'добрый вечер', 'good evening', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e22e6636-c5df-5dc7-93c1-15dae7e6dd58', '97548fca-a325-58de-a4ea-3d2b89876116', 'до свидания', 'goodbye', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('6aadebda-b53b-5938-8078-d35efc80f18f', '97548fca-a325-58de-a4ea-3d2b89876116', 'пока', 'see you later', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('1492c48f-1375-5a69-896a-c515c1f8fa58', '97548fca-a325-58de-a4ea-3d2b89876116', 'да', 'yes', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('70a3d32c-db57-558f-899f-d828549c6f57', '97548fca-a325-58de-a4ea-3d2b89876116', 'нет', 'no', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('3fecf5e7-91df-57b1-9743-489e264b5d1b', '97548fca-a325-58de-a4ea-3d2b89876116', 'спасибо', 'thank you', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('213898c1-8c6b-50c9-8f38-a97856bbcc6f', '97548fca-a325-58de-a4ea-3d2b89876116', 'пожалуйста', 'please', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('346f190a-f300-5510-aaf0-54555313c887', '97548fca-a325-58de-a4ea-3d2b89876116', 'один', 'one', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7979d761-259c-5994-848f-d6f3ab20d7c1', '97548fca-a325-58de-a4ea-3d2b89876116', 'два', 'two', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5131d87f-6edd-5656-9ffe-3549a95411b3', '97548fca-a325-58de-a4ea-3d2b89876116', 'три', 'three', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('fd03f0ad-3e45-554b-a427-140618659249', '97548fca-a325-58de-a4ea-3d2b89876116', 'четыре', 'four', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7995efbc-6021-5c51-9779-53b2d168d46e', '97548fca-a325-58de-a4ea-3d2b89876116', 'пять', 'five', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a0e3651b-b667-54b3-8807-3d9dff16cb83', '97548fca-a325-58de-a4ea-3d2b89876116', 'шесть', 'six', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b8cfaa52-6e68-5609-b7f8-4568f57e47bb', '97548fca-a325-58de-a4ea-3d2b89876116', 'семь', 'seven', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('cd4fd417-7890-53f9-84d7-07b808be2cf2', '97548fca-a325-58de-a4ea-3d2b89876116', 'восемь', 'eight', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('49140466-ed82-530c-a290-c57b8b9c93f6', '97548fca-a325-58de-a4ea-3d2b89876116', 'девять', 'nine', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('fde32ba0-84df-57d2-8d32-9d51fdb8fccb', '97548fca-a325-58de-a4ea-3d2b89876116', 'десять', 'ten', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('c47b71cd-f957-5eef-bd18-f86f1750b34e', '97548fca-a325-58de-a4ea-3d2b89876116', 'понедельник', 'Monday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('81a23e1c-7063-50e6-92c7-85bc94ce22e2', '97548fca-a325-58de-a4ea-3d2b89876116', 'вторник', 'Tuesday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('32eec6d4-ff08-57c2-ac8e-397ddccd6f15', '97548fca-a325-58de-a4ea-3d2b89876116', 'среда', 'Wednesday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('07bfd3ba-8dc8-5a80-8b3f-48a909b5e188', '97548fca-a325-58de-a4ea-3d2b89876116', 'четверг', 'Thursday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('ab95a560-f24c-5063-a47e-a7b43fbe3420', '97548fca-a325-58de-a4ea-3d2b89876116', 'пятница', 'Friday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('de6569ae-55fb-5178-991b-0fb1afa7b706', '97548fca-a325-58de-a4ea-3d2b89876116', 'суббота', 'Saturday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('bcf74dea-974c-59b3-a264-0d86b93723e5', '97548fca-a325-58de-a4ea-3d2b89876116', 'воскресенье', 'Sunday', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9b34ea92-246b-5bba-9ee0-7e70fdef1049', '97548fca-a325-58de-a4ea-3d2b89876116', 'красный', 'red', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('d45e9436-b668-55f3-b22a-f5fdea240ae8', '97548fca-a325-58de-a4ea-3d2b89876116', 'синий', 'blue', null, null, null, 'ru')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+
+-- ──── Mandarin — Starter (A1) (zh · A1) ────
+insert into public.decks (id, name, language_code, cefr_level, source, owner_id)
+values ('26f66ee9-2fdc-5698-9644-8771f1d36583', 'Mandarin — Starter (A1)', 'zh', 'A1', 'bundled', null)
+on conflict (id) do update set
+  name = excluded.name,
+  language_code = excluded.language_code,
+  cefr_level = excluded.cefr_level;
+
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9508bef5-5b26-568f-b540-23350ca4e3f6', '26f66ee9-2fdc-5698-9644-8771f1d36583', '你好', 'hello', 'nǐ hǎo', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('7ab9b185-8b7d-5c84-b3b2-d0414794e6d6', '26f66ee9-2fdc-5698-9644-8771f1d36583', '早上好', 'good morning', 'zǎoshang hǎo', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('49e93bff-15b6-5766-9f74-5a4c563373f1', '26f66ee9-2fdc-5698-9644-8771f1d36583', '下午好', 'good afternoon', 'xiàwǔ hǎo', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('be32d598-41df-5940-8de2-9d6b68b135ec', '26f66ee9-2fdc-5698-9644-8771f1d36583', '晚上好', 'good evening', 'wǎnshang hǎo', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('69a9853b-fe9e-557c-a221-5a6cf9e4214d', '26f66ee9-2fdc-5698-9644-8771f1d36583', '再见', 'goodbye', 'zàijiàn', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a64c284c-58ee-59f3-8de9-5de173bceb73', '26f66ee9-2fdc-5698-9644-8771f1d36583', '待会见', 'see you later', 'dāihuì jiàn', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b538dbfe-15a9-50d9-aa40-8ca4661e1659', '26f66ee9-2fdc-5698-9644-8771f1d36583', '是', 'yes', 'shì', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('c887dbee-755d-5bc3-afea-0f19e2c8c13c', '26f66ee9-2fdc-5698-9644-8771f1d36583', '不是', 'no', 'bù shì', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('c5a22a53-dd9e-5711-bc9d-fd5f426aa2d5', '26f66ee9-2fdc-5698-9644-8771f1d36583', '谢谢', 'thank you', 'xièxie', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('e8a82581-01e8-5c4c-8b90-b91b55175584', '26f66ee9-2fdc-5698-9644-8771f1d36583', '不客气', 'you''re welcome', 'bù kèqi', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f433fd95-248b-5ad9-96db-262b5bd2d7ef', '26f66ee9-2fdc-5698-9644-8771f1d36583', '请', 'please', 'qǐng', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('79975186-f3f2-5b08-92fd-6269d4768f86', '26f66ee9-2fdc-5698-9644-8771f1d36583', '一', 'one', 'yī', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('ebb6fa3e-a5f7-5940-a810-87d2c91d743c', '26f66ee9-2fdc-5698-9644-8771f1d36583', '二', 'two', 'èr', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('4e7b3b7d-a0f6-5414-921b-1fe27e20dc40', '26f66ee9-2fdc-5698-9644-8771f1d36583', '三', 'three', 'sān', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('9e48c436-7229-5fbc-8a24-ba54d6f6daee', '26f66ee9-2fdc-5698-9644-8771f1d36583', '四', 'four', 'sì', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('85bc96b6-06f2-5d5f-89b1-9b4c5803c5e8', '26f66ee9-2fdc-5698-9644-8771f1d36583', '五', 'five', 'wǔ', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('03624f7c-9865-5420-949c-6a5b4103a97c', '26f66ee9-2fdc-5698-9644-8771f1d36583', '六', 'six', 'liù', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('8fc01b5e-c95e-5b0f-9d1d-e01e732f72d6', '26f66ee9-2fdc-5698-9644-8771f1d36583', '七', 'seven', 'qī', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('aa84ffb2-1918-509b-b736-619f1718a38b', '26f66ee9-2fdc-5698-9644-8771f1d36583', '八', 'eight', 'bā', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('67bbaddd-ab86-58a2-ac12-05641271f4e8', '26f66ee9-2fdc-5698-9644-8771f1d36583', '九', 'nine', 'jiǔ', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('06f7abd3-2b96-5ab1-98e6-f7f10265825c', '26f66ee9-2fdc-5698-9644-8771f1d36583', '十', 'ten', 'shí', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5886d5c5-6e6a-5248-90cd-4caea4d35f69', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期一', 'Monday', 'xīngqī yī', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('f55dfbee-771f-5557-80cc-03a2437ccb6c', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期二', 'Tuesday', 'xīngqī èr', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('bf5114f7-e90d-599b-8c27-77dbb11a76ec', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期三', 'Wednesday', 'xīngqī sān', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('40b68272-0dac-591e-b265-7b54e9ae2a23', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期四', 'Thursday', 'xīngqī sì', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('a4bcf1ce-83f1-5c65-87f9-271b9cbec80e', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期五', 'Friday', 'xīngqī wǔ', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('b42481a7-d400-5df6-9cac-ac6a3742be79', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期六', 'Saturday', 'xīngqī liù', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('0a3ac8db-75fe-56bf-ae51-47cc46b2c417', '26f66ee9-2fdc-5698-9644-8771f1d36583', '星期日', 'Sunday', 'xīngqī rì', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('5bbebc7f-9f8f-542d-8e1f-2d67c0328314', '26f66ee9-2fdc-5698-9644-8771f1d36583', '红色', 'red', 'hóngsè', null, null, 'zh')
+on conflict (id) do update set
+  target_text = excluded.target_text,
+  native_text = excluded.native_text,
+  ipa = excluded.ipa,
+  example_sentence_target = excluded.example_sentence_target,
+  example_sentence_native = excluded.example_sentence_native,
+  language_code = excluded.language_code;
+insert into public.cards (id, deck_id, target_text, native_text, ipa, example_sentence_target, example_sentence_native, language_code)
+values ('2da619dc-f52b-5f9e-921e-000fd9266557', '26f66ee9-2fdc-5698-9644-8771f1d36583', '蓝色', 'blue', 'lánsè', null, null, 'zh')
 on conflict (id) do update set
   target_text = excluded.target_text,
   native_text = excluded.native_text,

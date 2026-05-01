@@ -172,6 +172,12 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ts-fsrs (in `@repeaty/shared`)       | ^4.7.1     | FSRS-4.7+ scheduler engine wrapped by `@repeaty/shared/fsrs`. Pinned to ^4.7.1 (the version we validate against) rather than ^4.5.0 to avoid silent behavioral upgrades on fresh installs. | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
 | vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
 
+### Installed in Request 6.3 (Workbox service worker)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| vite-plugin-pwa                      | latest     | Workbox-built service worker for the PWA. Generates the SW from a runtime-caching config in `vite.config.ts`; precaches hashed JS/CSS/HTML at install. | hand-rolled Workbox setup | dev-only (SW itself is small at runtime) |
+
 ### Installed in Request 5.3 (generate-feedback Edge Function)
 
 | Package                              | Version    | Reason                                           | Considered                  | Cost                  |

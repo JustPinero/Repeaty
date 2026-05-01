@@ -44,3 +44,10 @@ export {
   buildFeedbackPrompt,
   stripFence,
 } from './feedback-prompt';
+export {
+  type LessonCard,
+  type LessonOutput,
+  type LessonPromptInput,
+  LessonOutputSchema,
+  buildLessonPrompt,
+} from './lesson-prompt';

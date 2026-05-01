@@ -51,6 +51,8 @@ Format per entry:
 
 ### DEBT-003 — OpenAI TTS for Japanese / Mandarin
 - **Date deferred:** 2026-04-29
+- **Date resolved:** 2026-05-01 (post-launch maintenance pass)
+- **Resolution:** `tts-jazh` Edge Function lands at `supabase/functions/tts-jazh/`. Pro/admin-only, daily cap 100/user via `bump_rate_limit('tts_jazh', 100)`, 200-char text cap, accepts only `lang ∈ {ja, zh}`, returns `audio/mpeg` bytes from OpenAI tts-1 with env-configurable voices (`OPENAI_TTS_VOICE_JA` / `OPENAI_TTS_VOICE_ZH`, default shimmer/nova). Per-request `Deno.serve` JWT-bind for the rate-limit RPC matches the Phase-5 pattern. `apps/web/src/platform/web.ts` `playTargetText` short-circuits to the Edge Function when the lang starts with `ja` or `zh`, plays the returned blob through a transient `<audio>` element, falls back to SpeechSynthesis silently on any failure (free-tier 403, rate-limited 429, transport, parse). In-memory blob cache keyed on `${lang}|${text}` so repeats don't re-call. 11 Deno tests on the handler. ~~_Open_~~
 - **Originating phase / request:** Kickoff (ADR-004)
 - **What was deferred:** Replacing the browser SpeechSynthesis API with OpenAI TTS (or Azure / ElevenLabs) for ja/zh, where browser quality is inconsistent. v1 uses browser TTS for all 7 languages.
 - **Why deferred:** Adds per-call cost. Browser TTS is acceptable for ES/FR/DE/IT/RU and tolerable for ja/zh. Wait for real beta-user feedback (Pro tier feature when activated).

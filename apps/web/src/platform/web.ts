@@ -4,6 +4,83 @@ import type {
   PlayTargetTextOptions,
   RecordingHandle,
 } from './types';
+import { supabase } from '@/lib/supabase';
+
+// ── Pro-tier ja/zh TTS via the tts-jazh Edge Function (DEBT-003 active) ────
+
+/** Cache key for the Pro TTS path. Same text+lang reused across review +
+ * comprehension + pronunciation sessions hits the cache. */
+function ttsCacheKey(text: string, lang: string): string {
+  return `${lang}|${text}`;
+}
+
+const ttsBlobCache = new Map<string, Blob>();
+
+function shouldUseProTts(lang: string): boolean {
+  const prefix = lang.toLowerCase().split('-')[0];
+  return prefix === 'ja' || prefix === 'zh';
+}
+
+async function fetchProTts(text: string, lang: string, signal: AbortSignal): Promise<Blob | null> {
+  const key = ttsCacheKey(text, lang);
+  const cached = ttsBlobCache.get(key);
+  if (cached) return cached;
+
+  // supabase-js's `functions.invoke` returns text/json by default; for binary
+  // we fetch the URL directly with the auth header.
+  const sessionRes = await supabase.auth.getSession();
+  const accessToken = sessionRes.data.session?.access_token;
+  if (!accessToken) return null;
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tts-jazh`;
+  const lang2 = lang.toLowerCase().split('-')[0]!;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ text, lang: lang2 }),
+      signal,
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) {
+    // 403 (free tier), 429 (rate-limited), 5xx, etc. — fall back to
+    // SpeechSynthesis silently. The caller renders the same audio path
+    // regardless.
+    return null;
+  }
+  const blob = await response.blob();
+  ttsBlobCache.set(key, blob);
+  return blob;
+}
+
+async function playBlobThroughAudio(blob: Blob): Promise<void> {
+  if (typeof window === 'undefined') {
+    throw new Error('Audio playback unavailable');
+  }
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => URL.revokeObjectURL(url);
+    audio.addEventListener('ended', () => {
+      cleanup();
+      resolve();
+    });
+    audio.addEventListener('error', () => {
+      cleanup();
+      reject(new Error('TTS playback failed'));
+    });
+    audio.play().catch((err: unknown) => {
+      cleanup();
+      reject(err instanceof Error ? err : new Error(String(err)));
+    });
+  });
+}
 
 // ── SpeechSynthesis helpers ───────────────────────────────────────────────────
 
@@ -58,6 +135,24 @@ export const webPlatform: PlatformAdapter = {
   // TTS
 
   async playTargetText(text: string, options: PlayTargetTextOptions): Promise<void> {
+    // Pro-tier ja/zh: try the Edge-Function-backed OpenAI TTS first. On any
+    // failure (free tier → 403, rate-limited → 429, transport, parse) fall
+    // through to SpeechSynthesis silently — the caller doesn't need to
+    // distinguish.
+    if (shouldUseProTts(options.lang)) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15_000);
+      try {
+        const blob = await fetchProTts(text, options.lang, controller.signal);
+        if (blob) {
+          await playBlobThroughAudio(blob);
+          return;
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     const synth = getSynth();
     const Utterance = getUtteranceCtor();
     if (!synth || !Utterance) {

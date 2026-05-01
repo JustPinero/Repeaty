@@ -3,7 +3,10 @@ import type { ScoreBucket } from '@repeaty/shared';
 import { lookupFeedback } from './canned-text';
 
 export type FeedbackInput = {
-  kind: 'comprehension';
+  /** `comprehension` (Phase 3) or `pronunciation` (Phase 4). The Phase-5
+   * Claude swap-in will branch on this to pick a prompt template; v1 canned
+   * text uses the same lookup for both kinds (keyed on bucket × native-lang). */
+  kind: 'comprehension' | 'pronunciation';
   bucket: ScoreBucket;
   targetText: string;
   nativeText: string;

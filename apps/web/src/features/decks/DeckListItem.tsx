@@ -59,6 +59,13 @@ export function DeckListItem({ id, name, languageCode, cefrLevel, cardCount, sou
             >
               Comprehension
             </Link>
+            <Link
+              to={`/app/decks/${id}/pronunciation`}
+              aria-label={`Pronunciation practice — ${name}`}
+              className="flex-1 rounded border border-stone-300 px-3 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peaty-green focus-visible:ring-offset-2"
+            >
+              Pronunciation
+            </Link>
           </div>
         </CardContent>
       </Card>

@@ -26,4 +26,9 @@ if (selected === 'web') {
 }
 
 export const platform: PlatformAdapter = active;
-export type { PlatformAdapter, PlayTargetTextOptions } from './types';
+export type {
+  PlatformAdapter,
+  PlayTargetTextOptions,
+  MicPermission,
+  RecordingHandle,
+} from './types';

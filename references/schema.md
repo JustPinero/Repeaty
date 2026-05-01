@@ -110,15 +110,31 @@ FSRS state, one row per (user, card).
 | id                | UUID PK                           |                                                      |
 | user_id           | UUID FK auth.users                |                                                      |
 | card_id           | UUID FK cards                     |                                                      |
-| audio_storage_path| TEXT NOT NULL                     | path in Supabase Storage bucket `pronunciation-audio` |
+| audio_storage_path| TEXT NULL                         | path in Supabase Storage bucket `pronunciation-audio`. Nullable: NULLed by the retention job when the file is reaped (per 0014; was NOT NULL in 0005) |
 | whisper_transcript| TEXT NOT NULL                     |                                                      |
 | similarity_score  | REAL NOT NULL                     | 0.0–1.0 normalized Levenshtein for v1                |
 | feedback_text     | TEXT NULL                         | populated only for Pro tier                          |
 | created_at        | TIMESTAMPTZ                       |                                                      |
 
 **Indexes:** `idx_pron_user_card_created (user_id, card_id, created_at DESC)` for history view.
-**RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy: `user_id/...`.
-**Storage retention:** Cron job deletes audio files older than 7 days for free-tier users (kept indefinitely for Pro). `audio_storage_path` is set to NULL when the file is reaped, but the row stays for history.
+**RLS:** all ops `auth.uid() = user_id`. Storage bucket has matching path-prefix policy — see `pronunciation-audio` § below.
+**Storage retention:** Daily pg_cron job `audio-retention-daily` (03:00 UTC) calls `purge_free_tier_audio()` which NULLs `pronunciation_attempts.audio_storage_path` for free-tier rows older than 7 days, hiding the audio from the UI's history view (the Play button only renders when `audio_storage_path IS NOT NULL`). The underlying file blob in `storage.objects` is **not** removed in v1 — Supabase blocks direct `DELETE FROM storage.objects` from any role with a trigger. End-to-end file-blob cleanup lands when [DEBT-005](../audits/debt.md) activates (an Edge Function calling the Supabase Storage HTTP API). Pro/admin audio is preserved indefinitely. Implemented in 0012 (Request 4.6); pruned to path-only in 0013; column nullability in 0014.
+
+## Storage buckets
+
+### `pronunciation-audio` (Phase 4, Request 4.3)
+
+Private bucket (`public = false`) holding the recorded audio for `pronunciation_attempts`. Naming convention enforced by `apps/web/src/features/pronunciation/storage.ts`:
+
+```
+${user_id}/${card_id}/<uuidv4>.<ext>
+```
+
+`<ext>` is `webm` (Chrome/Firefox/Edge), `mp4` (iOS Safari), `mp3`/`ogg`/`wav` for Phase-5 backfills, or `bin` if mime is unknown. The 10 MB blob cap (`MAX_AUDIO_BYTES`) is enforced helper-side before the upload call.
+
+**RLS (migration 0011):** `(SELECT auth.uid())::text = (storage.foldername(name))[1]` on SELECT/INSERT/UPDATE/DELETE for `bucket_id = 'pronunciation-audio'`. Cross-user reads + writes are blocked at the storage layer — see `apps/web/tests/integration/supabase/bucket-rls.test.ts`.
+
+The `score-pronunciation` Edge Function (4.4) downloads via the service-role client (RLS bypass) but still verifies `audio_storage_path.startsWith(\`${user_id}/\`)` as a path-traversal defense — the helper enforces this on write, and the Edge Function re-asserts on read.
 
 ### `comprehension_attempts`
 

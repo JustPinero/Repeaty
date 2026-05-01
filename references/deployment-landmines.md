@@ -30,7 +30,7 @@ Stack-specific gotchas. Read before every deploy. `/pre-deploy` enforces.
 
 - **Edge Functions have a cold start.** First call after idle can be ~500ms slower. Acceptable for Whisper/Claude (already slow). Don't put it on the read path of the dashboard.
 
-- **Storage retention is policy-driven.** Audio files don't auto-expire. Wire a Postgres cron job (Supabase pg_cron) or a daily Edge Function to delete files older than 7 days for free-tier users.
+- **Storage retention is policy-driven.** Audio files don't auto-expire. v1 wires a Postgres cron job (`audio-retention-daily`, migrations 0011-0013) that NULLs `pronunciation_attempts.audio_storage_path` for stale free-tier rows — the user-facing privacy property holds (no row references the audio, the Play button disappears). The underlying file-blob removal is deferred per [DEBT-005](../audits/debt.md): Supabase blocks direct `DELETE FROM storage.objects`, so end-to-end cleanup needs an Edge Function calling the Supabase Storage HTTP API.
 
 - **Local CLI vs cloud parity.** `supabase start` runs Postgres + GoTrue + Storage + Edge Functions locally. Schema is identical, but Edge Function secrets are read from `supabase/.env` locally vs `supabase secrets` in cloud. `/pre-deploy` checks both.
 

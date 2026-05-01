@@ -36,6 +36,43 @@ jobs:
       - name: Run validate.sh (single source of truth)
         run: bash scripts/validate.sh
 
+  # ─── Edge Functions (Deno) — type-check + test ──────────────────────────────
+  edge-functions:
+    name: edge functions • deno check + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+    steps:
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Functions
+        working-directory: supabase/functions
+        run: |
+          shopt -s nullglob
+          fns=()
+          for d in */; do
+            entry="${d}index.ts"
+            [ -f "$entry" ] && fns+=("$entry")
+          done
+          if [ ${#fns[@]} -eq 0 ]; then
+            echo "No Edge Functions yet — skipping deno check"
+          else
+            deno check "${fns[@]}"
+          fi
+      - name: Run Edge Function tests
+        working-directory: supabase/functions
+        run: |
+          shopt -s nullglob
+          tests=()
+          for f in */*.test.ts; do tests+=("$f"); done
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "No Deno tests yet — skipping deno test"
+          else
+            deno test --allow-env --allow-net --allow-read "${tests[@]}"
+          fi
+
   # ─── Full suite + build verify (main only) ──────────────────────────────────
   build:
     name: production build (main only)

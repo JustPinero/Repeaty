@@ -31,29 +31,31 @@ Anything that touches a platform-specific browser/native API lives in `apps/web/
 apps/web/src/platform/
   ├── index.ts         // Active adapter selector (default: web)
   ├── types.ts         // PlatformAdapter contract
-  ├── web.ts           // Web implementations (live in 2.5: SpeechSynthesis-backed playTargetText)
+  ├── web.ts           // Web implementations: SpeechSynthesis (2.5) + MediaRecorder (4.1)
   ├── web.test.ts      // Mock-driven coverage for the web adapter
   └── capacitor.ts     // Lands when DEBT-002 activates
 ```
 
-### `PlatformAdapter` interface (TTS is live in 2.5; mic methods land in Phase 4)
+### `PlatformAdapter` interface (TTS live in 2.5, mic capture live in 4.1)
 
 ```ts
 export type PlatformAdapter = {
-  /** Speak text in a given BCP-47 language. SpeechSynthesis on web. */
+  // TTS
   playTargetText(text: string, options: { lang: string; rate?: number }): Promise<void>;
-  /** Cancel any in-flight speech. */
   cancelSpeech(): void;
-  /** True iff the runtime can actually speak (gates the Flashcard Play button). */
   canSpeak(): boolean;
 
-  // Phase 4 (pronunciation mode):
-  // requestMicPermission(): Promise<'granted' | 'denied' | 'prompt'>;
-  // startRecording(): Promise<unknown>;
-  // stopRecording(handle: unknown): Promise<Blob>;
-  // playRecordedAudio(blob: Blob): Promise<void>;
+  // Mic capture (Phase 4.1)
+  canRecord(): boolean;
+  requestMicPermission(): Promise<'granted' | 'denied' | 'prompt'>;
+  startRecording(): Promise<RecordingHandle>;
+  stopRecording(handle: RecordingHandle): Promise<Blob>;
+  cancelRecording(handle: RecordingHandle): void;
+  playRecordedAudio(blob: Blob): Promise<void>;
 };
 ```
+
+`RecordingHandle` is opaque (branded type); the web impl stashes the `MediaRecorder` + `MediaStream` + chunks inside. The Capacitor swap (DEBT-002) gets a different shape, but feature code never touches the internals.
 
 Selection is at module load via `import.meta.env.VITE_PLATFORM` — defaults to `'web'`. `'capacitor'` lands when [DEBT-002](../audits/debt.md) activates; until then the index falls back to web with a console warning.
 

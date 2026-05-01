@@ -171,7 +171,11 @@ export function MicCapture({ onRecorded, onReset }: Props) {
 
   if (status === 'recording') {
     return (
-      <div className="flex flex-col items-center gap-3">
+      <div
+        className="flex flex-col items-center gap-3"
+        data-testid="mic-recording"
+        data-state="recording"
+      >
         <Button
           type="button"
           variant="destructive"

@@ -42,14 +42,12 @@ Spanish, French, German, Italian, Russian, Japanese, Mandarin.
 ```bash
 git clone https://github.com/JustPinero/Repeaty.git
 cd Repeaty
-pnpm install
-cp .env.example .env.local       # fill in Supabase URL + anon key
-supabase start                    # local Postgres + Auth + Storage + Functions
-supabase db push                  # apply migrations
-pnpm --filter @repeaty/web dev    # http://localhost:5173
+bash scripts/dev-up.sh --reset    # toolchain check + install + supabase + dev server
 ```
 
-Server-side keys (Whisper, Claude) are configured per-environment via `supabase secrets set` — never put them in `.env.local`. See [`references/env-vars.md`](references/env-vars.md).
+`scripts/dev-up.sh` is the one-shot spin-up: verifies pnpm + supabase CLI + docker, installs deps, starts Supabase if needed, applies migrations on `--reset`, writes `apps/web/.env.local`, prints all the URLs (Studio, Inbucket, Postgres), then launches Vite. Pass `--with-functions` to also background-start `supabase functions serve` for the Pro-tier features. See `bash scripts/dev-up.sh --help` for all flags.
+
+Server-side keys (Whisper, Claude) live in `supabase/.env` locally and `supabase secrets set` in production — never `VITE_`-prefixed. See [`references/env-vars.md`](references/env-vars.md).
 
 ## How the build runs
 

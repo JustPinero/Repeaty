@@ -60,6 +60,15 @@ export default function Dashboard() {
               </div>
             )}
             <ReviewQueue />
+            <p className="text-center text-sm">
+              <Link
+                to="/app/decks"
+                aria-label="Browse all decks"
+                className="text-stone-500 underline hover:text-peaty-green"
+              >
+                Your decks →
+              </Link>
+            </p>
             {isPro && (
               <div className="rounded-xl border border-peaty-green/30 bg-peaty-green/5 p-4 text-center">
                 <p className="text-sm font-medium text-peaty-green">Pro feature</p>

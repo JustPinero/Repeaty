@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import React from 'react';
 
 const sessionMock = vi.fn();
@@ -21,7 +20,7 @@ const canRecordMock = vi.fn(() => true);
 const requestMicPermissionMock = vi.fn(async () => 'prompt' as const);
 const startRecordingMock = vi.fn(async () => ({ __brand: 'RecordingHandle' as const }));
 const stopRecordingMock = vi.fn(
-  async () => new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/webm' }),
+  async (_h: unknown) => new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/webm' }),
 );
 vi.mock('@/platform', () => ({
   platform: {
@@ -29,8 +28,8 @@ vi.mock('@/platform', () => ({
     requestMicPermission: () => requestMicPermissionMock(),
     startRecording: () => startRecordingMock(),
     stopRecording: (h: unknown) => stopRecordingMock(h),
-    cancelRecording: () => undefined,
-    playRecordedAudio: async () => undefined,
+    cancelRecording: (_h: unknown) => undefined,
+    playRecordedAudio: (_blob: Blob) => Promise.resolve(),
   },
 }));
 

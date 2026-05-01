@@ -4,6 +4,7 @@ import { useAuthUser } from '@/features/auth';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui';
 import { CardComprehensionHistory } from '@/features/comprehension/CardComprehensionHistory';
+import { CardPronunciationHistory } from '@/features/pronunciation/CardPronunciationHistory';
 
 type CardRow = {
   id: string;
@@ -77,6 +78,11 @@ export default function CardDetailPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Comprehension history</h2>
             <CardComprehensionHistory cardId={card.id} />
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">Pronunciation history</h2>
+            <CardPronunciationHistory cardId={card.id} />
           </section>
         </>
       )}

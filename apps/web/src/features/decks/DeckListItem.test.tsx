@@ -55,4 +55,10 @@ describe('DeckListItem', () => {
     const link = screen.getByRole('link', { name: /^Comprehension drill/i });
     expect(link).toHaveAttribute('href', '/app/decks/abc-123/comprehension');
   });
+
+  it('links to the pronunciation session via an aria-labelled "Pronunciation" action', () => {
+    renderItem({ id: 'abc-123' });
+    const link = screen.getByRole('link', { name: /^Pronunciation practice/i });
+    expect(link).toHaveAttribute('href', '/app/decks/abc-123/pronunciation');
+  });
 });

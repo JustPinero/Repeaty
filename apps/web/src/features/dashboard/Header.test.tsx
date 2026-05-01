@@ -17,6 +17,21 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
+vi.mock('@/features/auth', () => ({
+  useAuthUser: () => ({ user: { id: 'u-1' }, isLoading: false }),
+  useProfile: () => ({
+    profile: {
+      id: 'u-1',
+      display_name: 'Ben',
+      email: 'a@example.com',
+      native_language_code: 'en-US',
+      tier: 'free',
+      is_admin: false,
+    },
+    isLoading: false,
+  }),
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {

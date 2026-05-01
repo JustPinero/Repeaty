@@ -45,25 +45,21 @@ const deps: HandlerDeps = {
       .eq('id', userId)
       .maybeSingle();
     if (error || !data) return null;
-    // Pull cefr_level from the user's primary user_languages row. v1 picks
-    // the first one — Phase 6 surfaces a per-language lookup if needed.
-    const langs = await serviceClient
-      .from('user_languages')
-      .select('cefr_level')
-      .eq('user_id', userId)
-      .limit(1);
-    const cefr = (langs.data?.[0]?.cefr_level ?? 'A1') as
-      | 'A1'
-      | 'A2'
-      | 'B1'
-      | 'B2'
-      | 'C1'
-      | 'C2';
     return {
       tier: data.tier as 'free' | 'pro' | 'admin',
       native_language_code: (data.native_language_code as string) ?? 'en',
-      cefr_level: cefr,
     };
+  },
+
+  async getCefrForLanguage(userId: string, languageCode: string) {
+    const { data, error } = await serviceClient
+      .from('user_languages')
+      .select('cefr_level')
+      .eq('user_id', userId)
+      .eq('language_code', languageCode)
+      .maybeSingle();
+    if (error || !data) return 'A1';
+    return (data.cefr_level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2') ?? 'A1';
   },
 
   async getAttempt(kind, attemptId, jwt) {
@@ -158,12 +154,15 @@ const deps: HandlerDeps = {
     if (error) throw new Error(error.message);
   },
 
-  // Placeholder — overridden per-request inside Deno.serve below so the RPC
-  // resolves auth.uid() via the caller's JWT (SECURITY DEFINER reads the
-  // connection's auth context, not the function's definer). Calling it via
+  // Placeholders — overridden per-request inside Deno.serve below so the RPCs
+  // resolve auth.uid() via the caller's JWT (SECURITY DEFINER reads the
+  // connection's auth context, not the function's definer). Calling them via
   // the static service-role client raises UNAUTHENTICATED.
   async bumpRateLimit(_bucket: string, _cap: number): Promise<number> {
     throw new Error('bumpRateLimit must be bound per-request');
+  },
+  async decrementRateLimit(_bucket: string): Promise<void> {
+    throw new Error('decrementRateLimit must be bound per-request');
   },
 
   async callClaude({ system, user, signal }) {
@@ -226,6 +225,13 @@ Deno.serve((req) => {
       });
       if (error) throw new Error(error.message);
       return data as number;
+    },
+    async decrementRateLimit(bucket: string): Promise<void> {
+      const client = jwt ? userClient(jwt) : serviceClient;
+      const { error } = await client.rpc('bump_rate_limit_decrement', {
+        p_bucket: bucket,
+      });
+      if (error) throw new Error(error.message);
     },
   };
   return createHandler(requestDeps)(req);

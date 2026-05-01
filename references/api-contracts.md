@@ -104,7 +104,7 @@ type GenerateLessonRequest = {
 2. Check rate limit (`rate_limits` table, bucket `lesson_generation`, daily cap 10). 429 if exceeded.
 3. Load user context: `profiles.native_language_code`, `user_languages.cefr_level`, recent weak words from `reviews` + `pronunciation_attempts` + `comprehension_attempts`.
 4. Build Claude prompt with structured JSON output schema (Zod-derived).
-5. Call Claude with 15s AbortController and `response_format: { type: "json_object" }` (or equivalent — strip markdown fences in case the model wraps).
+5. Call Anthropic `/v1/messages` with 15s AbortController. The Anthropic API has no `response_format` parameter (that's OpenAI-style); JSON output is enforced via the system prompt's "Output strictly as JSON…" preamble + markdown-fence stripping at parse time (`stripFence` helper in `packages/shared/src/strip-fence.ts`).
 6. Parse + Zod-validate. On parse failure: return 502-ish `UPSTREAM_FAILED` with raw response logged server-side.
 7. Insert deck (`source = 'ai_generated'`, `owner_id = user_id`) and cards.
 8. Bump rate limit counter.

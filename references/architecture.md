@@ -172,6 +172,14 @@ Every new dependency added after kickoff appends a row here with: package name, 
 | ts-fsrs (in `@repeaty/shared`)       | ^4.7.1     | FSRS-4.7+ scheduler engine wrapped by `@repeaty/shared/fsrs`. Pinned to ^4.7.1 (the version we validate against) rather than ^4.5.0 to avoid silent behavioral upgrades on fresh installs. | hand-rolled FSRS port (rejected as v1 yak-shave) | ~30KB gz (review session in 2.4 pulls it in) |
 | vitest (in `@repeaty/shared`)        | ^2.1.4     | Test runner — was previously only in `apps/web`  | (n/a)                       | dev-only              |
 
+### Installed in Request 6.3 (Workbox service worker) and 6.4 (Dexie offline queue)
+
+| Package                              | Version    | Reason                                           | Considered                  | Cost                  |
+| ------------------------------------ | ---------- | ------------------------------------------------ | --------------------------- | --------------------- |
+| vite-plugin-pwa                      | ^1.2.0     | Workbox-built service worker for the PWA. Generates the SW from a runtime-caching config in `vite.config.ts`; precaches hashed JS/CSS/HTML at install. | hand-rolled Workbox setup | dev-only (SW itself ~10 KB gz at runtime, separate chunk) |
+| dexie                                | ^4.4.2     | IndexedDB wrapper for the offline queues (`pending_reviews` + `pending_comprehension_attempts`). v1 ships two queues; pronunciation queueing is deferred to DEBT-008. | localforage, hand-rolled IDB | ~30 KB gz (in main bundle) |
+| fake-indexeddb (devDep)              | ^6.2.5     | jsdom doesn't ship an IndexedDB; `offline-queue.test.ts` polyfills via `import 'fake-indexeddb/auto'`. | mocked Dexie methods | dev-only |
+
 ### Installed in Request 5.3 (generate-feedback Edge Function)
 
 | Package                              | Version    | Reason                                           | Considered                  | Cost                  |
@@ -191,10 +199,7 @@ shadcn/ui itself is copy-paste rather than a runtime dep — components live in 
 
 ### Pending (added in later requests)
 
-| Package                       | Planned in   | Reason                                                  |
-| ----------------------------- | ------------ | ------------------------------------------------------- |
-| dexie                         | Phase 6      | IndexedDB wrapper for offline review queue (deferred from Phase 2 — review session ships online-only) |
-| workbox-*                     | Phase 6      | Service worker for PWA offline                           |
+(none currently — `dexie` and `vite-plugin-pwa` landed in Phase 6.)
 
 ## Phases (live build plan)
 

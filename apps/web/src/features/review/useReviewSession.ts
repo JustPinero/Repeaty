@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { initialState, schedule, Rating, type FsrsState } from '@repeaty/shared';
 import { supabase } from '@/lib/supabase';
+import { enqueueReview } from '@/lib/offline-queue';
 import { useAuthUser } from '@/features/auth';
 
 export type ReviewCard = {
@@ -135,8 +136,12 @@ export function useReviewSession(deckId: string): ReviewSessionState {
         const now = new Date();
         const newState = schedule(head.state, rating, now);
 
-        const { error: upsertError } = await supabase.from('reviews').upsert(
-          {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          // Offline: enqueue for replay on reconnect. The local queue
+          // advances anyway so the user keeps reviewing without waiting on
+          // network — the upsert lands when the offline-queue replay loop
+          // drains.
+          await enqueueReview({
             user_id: userId,
             card_id: head.card.id,
             fsrs_state: newState,
@@ -144,10 +149,22 @@ export function useReviewSession(deckId: string): ReviewSessionState {
             interval_days: newState.scheduled_days,
             ease: newState.difficulty,
             last_reviewed_at: now.toISOString(),
-          },
-          { onConflict: 'user_id,card_id' },
-        );
-        if (upsertError) throw new Error(upsertError.message);
+          });
+        } else {
+          const { error: upsertError } = await supabase.from('reviews').upsert(
+            {
+              user_id: userId,
+              card_id: head.card.id,
+              fsrs_state: newState,
+              due_at: newState.due,
+              interval_days: newState.scheduled_days,
+              ease: newState.difficulty,
+              last_reviewed_at: now.toISOString(),
+            },
+            { onConflict: 'user_id,card_id' },
+          );
+          if (upsertError) throw new Error(upsertError.message);
+        }
 
         setQueue((prev) => {
           const rest = prev.slice(1);

@@ -1,0 +1,43 @@
+# Japanese — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# IPA included for CJK cards per request 6.1 — Whisper's transcript and the
+# learner's input both benefit from a phonetic anchor since Japanese romaji
+# isn't unique (e.g. つ vs す both casefold to similar romaji forms).
+# Numbers 1–10: Sino-Japanese readings (used most often in counting drills).
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index.
+id: starter-ja-a1
+name: Japanese — Starter (A1)
+language_code: ja
+cefr_level: A1
+cards:
+  - { target: こんにちは, native: hello, ipa: konnichiwa }
+  - { target: おはようございます, native: good morning, ipa: ohayou gozaimasu }
+  - { target: こんにちは, native: good afternoon, ipa: konnichiwa }
+  - { target: こんばんは, native: good evening, ipa: konbanwa }
+  - { target: さようなら, native: goodbye, ipa: sayounara }
+  - { target: またね, native: see you later, ipa: matane }
+  - { target: はい, native: "yes", ipa: hai }
+  - { target: いいえ, native: "no", ipa: iie }
+  - { target: ありがとう, native: thank you, ipa: arigatou }
+  - { target: どういたしまして, native: you're welcome, ipa: douitashimashite }
+  - { target: お願いします, native: please, ipa: onegaishimasu }
+  - { target: いち, native: one, ipa: ichi }
+  - { target: に, native: two, ipa: ni }
+  - { target: さん, native: three, ipa: san }
+  - { target: し, native: four, ipa: shi }
+  - { target: ご, native: five, ipa: go }
+  - { target: ろく, native: six, ipa: roku }
+  - { target: しち, native: seven, ipa: shichi }
+  - { target: はち, native: eight, ipa: hachi }
+  - { target: きゅう, native: nine, ipa: kyuu }
+  - { target: じゅう, native: ten, ipa: juu }
+  - { target: 月曜日, native: Monday, ipa: getsuyoubi }
+  - { target: 火曜日, native: Tuesday, ipa: kayoubi }
+  - { target: 水曜日, native: Wednesday, ipa: suiyoubi }
+  - { target: 木曜日, native: Thursday, ipa: mokuyoubi }
+  - { target: 金曜日, native: Friday, ipa: kinyoubi }
+  - { target: 土曜日, native: Saturday, ipa: doyoubi }
+  - { target: 日曜日, native: Sunday, ipa: nichiyoubi }
+  - { target: 赤, native: red, ipa: aka }
+  - { target: 青, native: blue, ipa: ao }

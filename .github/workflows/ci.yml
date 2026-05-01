@@ -157,6 +157,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
           SUPABASE_URL: ${{ steps.sb.outputs.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ steps.sb.outputs.SUPABASE_ANON_KEY }}
+          # Some E2E specs (ai-deck-generation-pro) seed test fixtures via the
+          # Supabase admin REST API (e.g. flipping tier=pro post-signup).
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.sb.outputs.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           for flow in ${{ steps.flows.outputs.flows }}; do
             echo "→ E2E: $flow"

@@ -23,12 +23,12 @@
     },
     "ai-deck-generation-pro": {
       "phase": 5,
-      "status": "not-started",
+      "status": "complete",
       "spec": "apps/web/tests/e2e/ai-deck-generation-pro.spec.ts"
     },
     "pwa-install-and-offline": {
       "phase": 6,
-      "status": "not-started",
+      "status": "complete",
       "spec": "apps/web/tests/e2e/pwa-install-and-offline.spec.ts"
     }
   }

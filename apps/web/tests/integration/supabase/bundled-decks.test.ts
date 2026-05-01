@@ -51,9 +51,9 @@ describe('bundled decks', () => {
     expect(deck!.name).toMatch(/french/i);
   });
 
-  it('each starter deck has between 25 and 35 cards', async () => {
+  it('each of the 7 starter languages has a Phase-1-A1 deck with 25–35 cards', async () => {
     const service = getServiceClient();
-    for (const lang of ['es', 'fr']) {
+    for (const lang of ['es', 'fr', 'de', 'it', 'ru', 'ja', 'zh']) {
       const decks = await service
         .from('decks')
         .select('id')

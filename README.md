@@ -6,7 +6,18 @@ A PWA that unifies three language-learning modes — **SRS flashcards**, **compr
 
 ## Status
 
-🚧 **Phase 1 — Foundation.** Building in public. See [`requests/`](requests/) for the live phased build plan and [`audits/debt.md`](audits/debt.md) for the deferred-work backlog.
+**Phase 6 — PWA Launch** (final phase before v1 beta). Phases 1–5 are merged to `main`:
+
+| Phase | Focus                          | Status |
+| ----- | ------------------------------ | ------ |
+| 1     | Foundation                     | ✓ shipped |
+| 2     | Flashcards & SRS               | ✓ shipped |
+| 3     | Comprehension (speed scoring)  | ✓ shipped |
+| 4     | Pronunciation (Whisper)        | ✓ shipped |
+| 5     | AI Personalization (Pro gate)  | ✓ shipped |
+| 6     | PWA polish + multi-language    | 🚧 in flight |
+
+See [`requests/`](requests/) for the per-phase request files, [`audits/`](audits/) for audit reports, and [`audits/debt.md`](audits/debt.md) for the deferred-work backlog.
 
 ## Why three modes in one app
 
@@ -46,10 +57,16 @@ This repo follows a phased, audit-gated build. Each phase lives on its own branc
 
 ## Roadmap (post-v1)
 
+The numbered DEBT entries are activatable — each carries explicit `To activate` steps in [`audits/debt.md`](audits/debt.md).
+
 - **Stripe billing** ([DEBT-001](audits/debt.md)) — replace the manual `/admin` tier toggle.
 - **Native iOS/Android via Capacitor** ([DEBT-002](audits/debt.md)) — platform abstraction layer is already in place.
 - **OpenAI TTS for Japanese/Mandarin** ([DEBT-003](audits/debt.md)) — Pro-tier audio quality upgrade.
 - **Phoneme-level pronunciation scoring** ([DEBT-004](audits/debt.md)) — replace Levenshtein-on-transcript with phoneme alignment.
+- **Free-tier audio file blob cleanup** ([DEBT-005](audits/debt.md)).
+- **`pronunciation-session` E2E flake fix** ([DEBT-006](audits/debt.md)).
+- **Properly-sized PWA icons + remaining Peaty poses** ([DEBT-007](audits/debt.md)).
+- **Offline queueing for pronunciation attempts** ([DEBT-008](audits/debt.md)).
 
 ## Contributing
 

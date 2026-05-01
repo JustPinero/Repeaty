@@ -1,0 +1,40 @@
+# Russian — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# Russian uses Cyrillic — the shared similarity helper does NFC + casefold but
+# does NOT diacritic-fold (Ё/Е, Й/И are real semantic distinctions per ADR-007).
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index.
+id: starter-ru-a1
+name: Russian — Starter (A1)
+language_code: ru
+cefr_level: A1
+cards:
+  - { target: привет, native: hello }
+  - { target: доброе утро, native: good morning }
+  - { target: добрый день, native: good afternoon }
+  - { target: добрый вечер, native: good evening }
+  - { target: до свидания, native: goodbye }
+  - { target: пока, native: see you later }
+  - { target: да, native: "yes" }
+  - { target: нет, native: "no" }
+  - { target: спасибо, native: thank you }
+  - { target: пожалуйста, native: please }
+  - { target: один, native: one }
+  - { target: два, native: two }
+  - { target: три, native: three }
+  - { target: четыре, native: four }
+  - { target: пять, native: five }
+  - { target: шесть, native: six }
+  - { target: семь, native: seven }
+  - { target: восемь, native: eight }
+  - { target: девять, native: nine }
+  - { target: десять, native: ten }
+  - { target: понедельник, native: Monday }
+  - { target: вторник, native: Tuesday }
+  - { target: среда, native: Wednesday }
+  - { target: четверг, native: Thursday }
+  - { target: пятница, native: Friday }
+  - { target: суббота, native: Saturday }
+  - { target: воскресенье, native: Sunday }
+  - { target: красный, native: red }
+  - { target: синий, native: blue }

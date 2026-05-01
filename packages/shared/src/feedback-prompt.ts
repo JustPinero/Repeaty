@@ -95,11 +95,6 @@ Similarity score: ${attempt.similarityScore.toFixed(2)} of 1.00
   return { system: SYSTEM_PROMPT, user };
 }
 
-/** Strip ``` and ```json fences before JSON.parse, per
- * `references/deployment-landmines.md` § Claude / Whisper. */
-export function stripFence(s: string): string {
-  return s
-    .replace(/^\s*```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/, '')
-    .trim();
-}
+// `stripFence` is the canonical helper in `./strip-fence.ts`. Edge
+// Functions and apps/web reach it via the shared barrel; not re-exported
+// from this prompt-specific module.

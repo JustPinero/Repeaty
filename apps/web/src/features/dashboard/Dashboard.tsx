@@ -3,41 +3,37 @@ import { Link } from 'react-router-dom';
 import { useAuthUser, useProfile } from '@/features/auth';
 import { supabase } from '@/lib/supabase';
 import { Header } from './Header';
+import { InstallHint } from './InstallHint';
 import { PeatyGreeting } from './PeatyGreeting';
 import { LanguageSelector } from './LanguageSelector';
 import { ReviewQueue } from './ReviewQueue';
-
-type DashboardData = {
-  displayName: string | null;
-  targetLanguageCodes: string[];
-};
 
 export default function Dashboard() {
   const { user } = useAuthUser();
   const { profile } = useProfile();
   const isPro = profile?.tier === 'pro' || profile?.tier === 'admin';
 
-  const { data, isError, error, refetch } = useQuery({
-    queryKey: ['dashboard', user?.id],
+  // user_languages is a separate query because it lives in its own table
+  // with a per-user fan-out — `useProfile` returns the single profile row,
+  // and rolling that lookup into one combined RPC is Phase-6 polish.
+  const { data: userLanguages, isError, error, refetch } = useQuery<string[]>({
+    queryKey: ['dashboard-user-languages', user?.id],
     enabled: !!user?.id,
-    queryFn: async (): Promise<DashboardData> => {
-      const [profile, userLangs] = await Promise.all([
-        supabase.from('profiles').select('display_name').eq('id', user!.id).single(),
-        supabase.from('user_languages').select('language_code').eq('user_id', user!.id),
-      ]);
-      if (profile.error) throw new Error(profile.error.message);
-      if (userLangs.error) throw new Error(userLangs.error.message);
-
-      return {
-        displayName: profile.data.display_name,
-        targetLanguageCodes: (userLangs.data ?? []).map((row) => row.language_code),
-      };
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_languages')
+        .select('language_code')
+        .eq('user_id', user!.id);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => row.language_code as string);
     },
   });
 
+  const displayName = profile?.display_name ?? null;
+
   return (
     <div className="min-h-full bg-peaty-cream text-stone-800">
-      <Header displayName={data?.displayName ?? null} />
+      <Header displayName={displayName} />
       <main className="mx-auto max-w-2xl space-y-8 p-6">
         {isError ? (
           <div
@@ -56,10 +52,11 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <PeatyGreeting displayName={data?.displayName ?? null} />
-            {data && data.targetLanguageCodes.length > 1 && (
+            <InstallHint />
+            <PeatyGreeting displayName={displayName} />
+            {userLanguages && userLanguages.length > 1 && (
               <div className="flex justify-center">
-                <LanguageSelector targetLanguageCodes={data.targetLanguageCodes} />
+                <LanguageSelector targetLanguageCodes={userLanguages} />
               </div>
             )}
             <ReviewQueue />

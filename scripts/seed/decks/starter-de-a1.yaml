@@ -1,0 +1,40 @@
+# German — Starter (A1).
+#
+# 30 cards: greetings · politeness · numbers 1–10 · days of the week · colors.
+# DO NOT reorder existing cards — UUIDv5 derivation depends on slug + index,
+# and reordering re-rolls every card's UUID. Add new cards at the end.
+id: starter-de-a1
+name: German — Starter (A1)
+language_code: de
+cefr_level: A1
+cards:
+  - { target: hallo, native: hello }
+  - { target: guten Morgen, native: good morning }
+  - { target: guten Tag, native: good afternoon }
+  - { target: guten Abend, native: good evening }
+  - { target: tschüss, native: goodbye }
+  - { target: bis später, native: see you later }
+  - { target: ja, native: "yes" }
+  - { target: nein, native: "no" }
+  - { target: danke, native: thank you }
+  - { target: bitte schön, native: you're welcome }
+  - { target: bitte, native: please }
+  - { target: eins, native: one }
+  - { target: zwei, native: two }
+  - { target: drei, native: three }
+  - { target: vier, native: four }
+  - { target: fünf, native: five }
+  - { target: sechs, native: six }
+  - { target: sieben, native: seven }
+  - { target: acht, native: eight }
+  - { target: neun, native: nine }
+  - { target: zehn, native: ten }
+  - { target: Montag, native: Monday }
+  - { target: Dienstag, native: Tuesday }
+  - { target: Mittwoch, native: Wednesday }
+  - { target: Donnerstag, native: Thursday }
+  - { target: Freitag, native: Friday }
+  - { target: Samstag, native: Saturday }
+  - { target: Sonntag, native: Sunday }
+  - { target: rot, native: red }
+  - { target: blau, native: blue }

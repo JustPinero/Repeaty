@@ -63,6 +63,34 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
+### DEBT-008 — Offline queueing for pronunciation attempts
+- **Date deferred:** 2026-05-01
+- **Originating phase / request:** Phase 6 / Request 6.4
+- **What was deferred:** `usePronunciationSession.submitRecording` does NOT enqueue to Dexie when offline — it currently lets the upload fail. Persisting the audio Blob in IndexedDB (Dexie supports it) is straightforward; the replay state machine on reconnect is the harder part because it needs to re-upload to Storage AND re-invoke `score-pronunciation` AND handle 401 re-auth between the two steps without losing the queued blob.
+- **Why deferred:** v1 ships review + comprehension queueing. Pronunciation queueing is a multi-step replay (upload → invoke → write attempt row) where each step has its own failure modes. Beta validation will tell us if Ben actually uses pronunciation offline often enough to justify the extra ~200 LOC of replay state machine.
+- **To activate:**
+  1. Add `pending_pronunciation_attempts` Dexie table with a `Blob` column for the audio + the storage path that would have been written.
+  2. Update `usePronunciationSession.submitRecording` with a `navigator.onLine === false` branch that enqueues the blob + card_id.
+  3. Extend `useOfflineReplay`'s `replayPronunciation` handler: re-upload via `uploadPronunciationBlob`, then call `supabase.functions.invoke('score-pronunciation', ...)`. If the upload succeeds but the function call fails, leave the storage path in the queued row so a retry doesn't double-upload.
+  4. Add integration tests covering: offline → enqueue → reconnect → flush; partial failure (upload OK, function down) → retry only the function call.
+- **Estimated effort:** M (~1 day).
+- **Reversal pointer:** No code change to revert; activation is additive.
+
+### DEBT-007 — Properly-sized PWA icons + remaining Peaty poses
+- **Date deferred:** 2026-05-01
+- **Originating phase / request:** Phase 6 / Request 6.2
+- **What was deferred:** The PWA manifest at `apps/web/public/manifest.webmanifest` references the existing welcome-pose JPG at `/peaty/peat-start.jpg` with `sizes: any` as a single-icon fallback. Lighthouse PWA installability allows this but the maskable + 192/512 properly-sized PNG variants are required to hit ≥ 90 on the PWA-icon audit. Same for the remaining Peaty poses 2–10 (cheering / thumbs-up / empathy / mic / book / stopwatch / thinking / sleepy / magic) — only Welcome Wave + AI Magic exist in `apps/web/public/peaty/` today.
+- **Why deferred:** Image generation runs outside the codebase (whatever tool Justin uses against the character reference in `assets/peaty/peaty-poses.md`). The manifest + index.html + InstallHint code is in place; only the binary PNGs are missing. Activation = generate the images, drop them into `apps/web/public/peaty/`, update the manifest's `icons` array to the proper-sized entries.
+- **To activate:**
+  1. Generate the 9 missing illustrations + the 192/512/maskable PNG icons + `peaty-splash.jpg` per the table in `references/repeaty-pwa.md` § Mascot.
+  2. Save each to `assets/peaty/` (design source-of-truth) AND `apps/web/public/peaty/` (served).
+  3. Update `apps/web/public/manifest.webmanifest` with the 192/512/maskable entries.
+  4. Update `apps/web/index.html` apple-touch-icon to point at the 192 PNG.
+  5. Re-run Lighthouse → confirm PWA installability section is fully green.
+  6. Phase-2 / 3 / 4 components currently using `peat-start.jpg` placeholder may swap to their dedicated poses (PeatyGreeting / Flashcard / Comprehension / Pronunciation headers).
+- **Estimated effort:** S (≤ 0.5 day, almost all in image generation).
+- **Reversal pointer:** No code change to revert; activation is additive.
+
 ### DEBT-006 — `pronunciation-session` E2E flow
 - **Date deferred:** 2026-05-01
 - **Originating phase / request:** Phase 4 audit gate / chore(5.0)

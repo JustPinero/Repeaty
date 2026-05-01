@@ -25,8 +25,9 @@ function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs
       Promise.resolve({
         tier: 'pro' as const,
         native_language_code: 'en-US',
-        cefr_level: 'A1' as const,
       }),
+    getCefrForLanguage: (_userId: string, _lang: string) =>
+      Promise.resolve('A1' as const),
     getAttempt: (_kind: 'comprehension' | 'pronunciation', _attemptId: string, _jwt: string) =>
       Promise.resolve(ATTEMPT_DATA),
     getCachedFeedback: (
@@ -46,6 +47,7 @@ function happyDeps(overrides: Partial<HandlerDeps> = {}): HandlerDeps & { __logs
       _text: string,
     ) => Promise.resolve(),
     bumpRateLimit: (_bucket: string, _cap: number) => Promise.resolve(1),
+    decrementRateLimit: (_bucket: string) => Promise.resolve(),
     callClaude: (_args: { system: string; user: string; signal: AbortSignal }) =>
       Promise.resolve(
         JSON.stringify({ feedback_text: 'Try emphasising the "h" sound at the start.' }),
@@ -94,7 +96,6 @@ Deno.test('returns 403 FORBIDDEN_TIER for free-tier callers', async () => {
         Promise.resolve({
           tier: 'free' as const,
           native_language_code: 'en-US',
-          cefr_level: 'A1' as const,
         }),
     }),
   );

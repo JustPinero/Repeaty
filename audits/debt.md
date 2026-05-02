@@ -65,6 +65,18 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
+### DEBT-009 — Author post-deploy smoke script
+- **Date deferred:** 2026-05-01
+- **Originating phase / request:** Phase 7 audit (`audits/bughunt-phase-7.md` Warning-1, `audits/test-audit-phase-7.md` Warning-1)
+- **What was deferred:** `scripts/post-deploy-smoke.sh` per `requests/phase-7-deployment/7.3-production-smoke.md`. Asserts HTTP 200 on `/`, `/login`, `/manifest.webmanifest`, valid JSON shape on the manifest, and a `Cache-Control` containing `must-revalidate` on `/sw.js`.
+- **Why deferred:** First prod deploy verified by hand via `curl`; a regression in `vercel.json`'s SPA rewrite is the only concrete failure mode the script catches, and that file is unlikely to change before a second deploy.
+- **To activate:**
+  1. Author `scripts/post-deploy-smoke.sh` taking `BASE_URL` (default `https://repeaty.vercel.app`) as env var.
+  2. Wire into a follow-up `pnpm smoke` script in root `package.json`.
+  3. Run after every `vercel --prod` (and from CI once we add auto-deploy on merge to main).
+- **Estimated effort:** XS (< 1 hour)
+- **Reversal pointer:** None — additive script.
+
 ### DEBT-008 — Offline queueing for pronunciation attempts
 - **Date deferred:** 2026-05-01
 - **Date resolved:** 2026-05-01 (post-launch maintenance pass)

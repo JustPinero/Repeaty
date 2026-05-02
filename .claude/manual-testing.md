@@ -2,7 +2,13 @@
 
 What to poke at in a real browser / on iOS, ranked by "would meaningfully degrade Ben's first 30 minutes" if it broke.
 
-## Setup (5 min)
+## Production
+
+- **App:** https://repeaty.vercel.app
+- **Supabase project:** `pvoupsduyymykawlmhpu` (https://pvoupsduyymykawlmhpu.supabase.co)
+- **Seeded accounts:** `bson13@ymail.com` / `Timmy911!` (Pro, display name "Ben"), `justinpinero@gmail.com` / `Test12345!` (admin)
+
+## Setup (5 min, local dev)
 
 ```bash
 git checkout main && git pull

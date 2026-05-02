@@ -6,7 +6,7 @@ A PWA that unifies three language-learning modes — **SRS flashcards**, **compr
 
 ## Status
 
-**Phase 6 — PWA Launch** (final phase before v1 beta). Phases 1–5 are merged to `main`:
+**v1 beta is live:** https://repeaty.vercel.app
 
 | Phase | Focus                          | Status |
 | ----- | ------------------------------ | ------ |
@@ -15,7 +15,8 @@ A PWA that unifies three language-learning modes — **SRS flashcards**, **compr
 | 3     | Comprehension (speed scoring)  | ✓ shipped |
 | 4     | Pronunciation (Whisper)        | ✓ shipped |
 | 5     | AI Personalization (Pro gate)  | ✓ shipped |
-| 6     | PWA polish + multi-language    | 🚧 in flight |
+| 6     | PWA polish + multi-language    | ✓ shipped |
+| 7     | Deployment (Vercel + Supabase Cloud) | ✓ shipped |
 
 See [`requests/`](requests/) for the per-phase request files, [`audits/`](audits/) for audit reports, and [`audits/debt.md`](audits/debt.md) for the deferred-work backlog.
 

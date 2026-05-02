@@ -49,3 +49,5 @@ supabase/.env
 # Misc
 .cache/
 *.pem
+.vercel
+.env*.local

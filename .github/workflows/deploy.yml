@@ -1,0 +1,98 @@
+name: Deploy
+
+# Auto-deploy on push to main, gated on the CI workflow succeeding.
+# Order is migrations → edge functions → frontend → smoke. A smoke fail
+# rolls the frontend back; migrations are forward-only (see
+# references/deployment-landmines.md).
+#
+# Required repo secrets (one-time setup):
+#   - VERCEL_TOKEN              https://vercel.com/account/tokens
+#   - VERCEL_ORG_ID             from apps/web/.vercel/project.json (orgId)
+#   - VERCEL_PROJECT_ID         from apps/web/.vercel/project.json (projectId)
+#   - SUPABASE_ACCESS_TOKEN     https://supabase.com/dashboard/account/tokens
+#   - SUPABASE_DB_PASSWORD      cloud project's database password
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+env:
+  NODE_VERSION: "22"
+  SUPABASE_PROJECT_REF: pvoupsduyymykawlmhpu
+
+jobs:
+  deploy:
+    name: deploy frontend + backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: supabase/setup-cli@v2.0.0
+        with:
+          version: latest
+
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: bash scripts/deploy-supabase.sh --functions-only
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Vercel pull (production env)
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: pnpm dlx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Vercel build
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: pnpm dlx vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+      - name: Vercel deploy (prebuilt)
+        id: vercel-deploy
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          URL=$(pnpm dlx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN" --no-clipboard 2>&1 | tail -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke against new deploy
+        run: pnpm smoke
+
+      - name: Rollback on smoke failure
+        if: failure() && steps.vercel-deploy.outcome == 'success'
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: pnpm dlx vercel@latest rollback --token="$VERCEL_TOKEN" --yes

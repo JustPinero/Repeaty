@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { GlobalErrorListenerMount } from './lib/GlobalErrorListenerMount';
 import { loadEnv } from './env';
 import './index.css';
 
@@ -34,6 +36,9 @@ if (!rootEl) {
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <GlobalErrorListenerMount />
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );

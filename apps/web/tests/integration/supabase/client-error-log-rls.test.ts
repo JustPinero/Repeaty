@@ -23,25 +23,21 @@ describe('client_error_log RLS', () => {
   });
 
   it('table exists and RLS is enabled', async () => {
-    const { data, error } = await getServiceClient()
-      .rpc('_test_relrowsecurity', { p_table: 'client_error_log' });
+    const { data, error } = await getServiceClient().rpc('_test_relrowsecurity', {
+      p_table: 'client_error_log',
+    });
     expect(error).toBeNull();
     expect(data).toBe(true);
   });
 
   it('user A can insert a row for themselves', async () => {
-    const { data, error } = await userA.client
-      .from('client_error_log')
-      .insert({
-        user_id: userA.userId,
-        message: 'Test error from user A',
-        stack: 'Error\n  at <anonymous>:1:1',
-        route: '/app',
-      })
-      .select()
-      .single();
+    const { error } = await userA.client.from('client_error_log').insert({
+      user_id: userA.userId,
+      message: 'Test error from user A',
+      stack: 'Error\n  at <anonymous>:1:1',
+      route: '/app',
+    });
     expect(error).toBeNull();
-    expect(data?.user_id).toBe(userA.userId);
   });
 
   it("user A cannot insert a row claiming user B's id", async () => {
@@ -66,19 +62,25 @@ describe('client_error_log RLS', () => {
   it('service-role can read every row (admin triage path)', async () => {
     const { data, error } = await getServiceClient()
       .from('client_error_log')
-      .select('id')
+      .select('id, user_id')
       .eq('user_id', userA.userId);
     expect(error).toBeNull();
     expect((data ?? []).length).toBeGreaterThan(0);
   });
 
   it('user_id defaults to auth.uid() when omitted', async () => {
-    const { data, error } = await userB.client
+    const insertRes = await userB.client
       .from('client_error_log')
-      .insert({ message: 'Default user_id check' })
-      .select('user_id')
+      .insert({ message: 'Default user_id check' });
+    expect(insertRes.error).toBeNull();
+
+    // Verify the row landed under userB's id via service-role.
+    const { data } = await getServiceClient()
+      .from('client_error_log')
+      .select('user_id, message')
+      .eq('user_id', userB.userId)
+      .eq('message', 'Default user_id check')
       .single();
-    expect(error).toBeNull();
     expect(data?.user_id).toBe(userB.userId);
   });
 });

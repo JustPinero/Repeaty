@@ -73,6 +73,28 @@ jobs:
             deno test --allow-env --allow-net --allow-read "${tests[@]}"
           fi
 
+  # ─── Production smoke (post-push to main) ──────────────────────────────────
+  # Runs scripts/post-deploy-smoke.sh against the live deployment after every
+  # push to main. No `needs:` — runs in parallel with validate so a smoke
+  # regression surfaces in the same minute as a code regression. See
+  # `requests/phase-8-operations/8.1-ci-smoke-gate.md`.
+  production-smoke:
+    name: production smoke (post-push to main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Run production smoke
+        run: pnpm smoke
+
   # ─── Full suite + build verify (main only) ──────────────────────────────────
   build:
     name: production build (main only)

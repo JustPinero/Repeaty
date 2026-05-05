@@ -22,6 +22,7 @@
     "format:check": "prettier --check .",
     "seed:decks": "tsx scripts/seed/seed-decks.ts",
     "build:icons": "tsx scripts/build-peaty-icons.ts",
+    "smoke": "bash scripts/post-deploy-smoke.sh",
     "gen:types": "supabase gen types typescript --local > packages/shared/src/db-types.ts || echo 'supabase not running — start it first'"
   },
   "devDependencies": {

@@ -209,6 +209,25 @@ Audit trail for `/admin` tier flips. Written by `flip_tier` RPC only.
 **Indexes:** `idx_tier_change_log_target (target_id, created_at desc)`.
 **RLS:** `SELECT` only when caller has `profiles.is_admin = true`; writes via service-role / `flip_tier` SECURITY DEFINER only.
 
+### `client_error_log` (Phase 8)
+Captures uncaught client-side errors for admin triage. Written by `apps/web/src/lib/error-log.ts` from the `<ErrorBoundary>` and global `error` / `unhandledrejection` listeners.
+
+| Column         | Type                              | Notes                                                |
+| -------------- | --------------------------------- | ---------------------------------------------------- |
+| id             | UUID PK                           |                                                      |
+| user_id        | UUID FK auth.users                | defaults to `auth.uid()` so the client doesn't need to set it |
+| message        | TEXT NOT NULL                     | scrubbed of `sk-*` API key patterns                  |
+| stack          | TEXT NULL                         | scrubbed + capped at 8 KB                            |
+| route          | TEXT NULL                         | `window.location.pathname` at error time             |
+| app_version    | TEXT NULL                         | git short SHA via Vite `define` (`__APP_VERSION__`)  |
+| user_agent     | TEXT NULL                         |                                                      |
+| viewport_w/h   | INT NULL                          | for mobile vs desktop split in triage                |
+| extra          | JSONB NULL                        | scrubbed of password/token/api_key fields, capped at 4 KB |
+| created_at     | TIMESTAMPTZ                       |                                                      |
+
+**Indexes:** `idx_client_error_log_user_created (user_id, created_at desc)`.
+**RLS:** `INSERT` allowed when `auth.uid() = user_id` (default fills `user_id`). **No SELECT policy** — admins read via service-role from Studio. The helper has an in-memory rate limit (5 inserts / 60s) to defend against a self-amplifying error loop.
+
 ## RPCs (Phase 5)
 
 ### `bump_rate_limit(p_bucket text, p_cap_per_day int) → int` (migration `0015`)
@@ -266,6 +285,9 @@ Phase 2 migrations:
 
 Phase 5 migrations:
 - `0015_pro_tier_infra.sql` — `rate_limits`, `feedback_cache`, `tier_change_log` tables + RLS + `bump_rate_limit` RPC.
+
+Phase 8 migrations:
+- `0021_client_error_log.sql` — `client_error_log` table + RLS (insert-own-only, default user_id = auth.uid()).
 - `0016_flip_tier_rpc.sql` — `flip_tier` SECURITY DEFINER RPC.
 - `0017_insert_ai_deck_with_cards.sql` — atomic AI-deck insert SECURITY DEFINER RPC.
 

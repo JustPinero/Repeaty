@@ -51,6 +51,20 @@ supabase secrets set \
 ```
 Verify with `supabase secrets list`.
 
+## GitHub Actions (auto-deploy, Phase 8.2)
+
+`.github/workflows/deploy.yml` reads these secrets via `${{ secrets.NAME }}`. Set them once via repo Settings → Secrets and variables → Actions, or via `gh secret set NAME` from the CLI.
+
+| Secret                      | Source                                                                             | Used by                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `VERCEL_TOKEN`              | https://vercel.com/account/tokens (create a token scoped to the `repeaty` project) | every Vercel CLI step                              |
+| `VERCEL_ORG_ID`             | `apps/web/.vercel/project.json` → `orgId`                                          | Vercel CLI auto-discovery                          |
+| `VERCEL_PROJECT_ID`         | `apps/web/.vercel/project.json` → `projectId`                                      | Vercel CLI auto-discovery                          |
+| `SUPABASE_ACCESS_TOKEN`     | https://supabase.com/dashboard/account/tokens                                      | `supabase link`, `supabase db push`, `supabase functions deploy` |
+| `SUPABASE_DB_PASSWORD`      | Cloud project's database password (Settings → Database → Connection)                | `supabase db push --password ...`                  |
+
+The workflow does not need `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — those live in **Supabase Edge Function secrets** (set once via `supabase secrets set` and stay there across deploys).
+
 ## Startup validator
 
 A Zod schema in `apps/web/src/env.ts` validates `import.meta.env.VITE_*` and throws a loud, named error at app boot if anything's missing. Same on the Edge Function side — each function imports a tiny `validateEnv()` helper from `_shared/`.

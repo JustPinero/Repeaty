@@ -65,28 +65,6 @@ Format per entry:
 - **Estimated effort:** M (1–2 days)
 - **Reversal pointer:** None. Activation adds; doesn't change defaults.
 
-### DEBT-011 — Manual rollback runbook in deployment-landmines.md
-- **Date deferred:** 2026-05-05
-- **Originating phase / request:** Phase 8 audit (`audits/bughunt-phase-8.md` Warning-2)
-- **What was deferred:** Documenting what to do when `deploy.yml`'s automatic `vercel rollback` step itself fails (Vercel auth expired, network blip mid-rollback). Today the only signal is the GitHub Actions failure email; no in-repo runbook exists for the operator.
-- **Why deferred:** Probability of rollback-of-rollback is low at v1's deploy cadence; the failure email + manual `vercel rollback` from a local terminal is a known fallback. Worth documenting before the second person touches the repo.
-- **To activate:**
-  1. Add a § "Auto-deploy rollback recovery" to `references/deployment-landmines.md`.
-  2. Sequence: check `vercel ls --prod` for the last known-good deployment; `vercel redeploy <id> --prod`; if Vercel CLI auth is broken, regenerate `VERCEL_TOKEN` and re-set as a repo secret.
-- **Estimated effort:** XS (~30 min)
-- **Reversal pointer:** None — additive doc.
-
-### DEBT-010 — Rename ci.yml `production-smoke` job for timing clarity
-- **Date deferred:** 2026-05-05
-- **Originating phase / request:** Phase 8 audit (`audits/bughunt-phase-8.md` Warning-1)
-- **What was deferred:** Renaming `production-smoke` in `.github/workflows/ci.yml` to `live-smoke` (or `pre-deploy-live-smoke`) so it's obvious the job validates the *currently-live* deploy, not the new one being shipped. The new-deploy smoke runs inside `deploy.yml`'s own steps.
-- **Why deferred:** Cosmetic. The functionality is correct (both checks are valuable); the only risk is operator confusion when both green checkmarks appear and a fresh deploy is broken. Trivial fix when convenient.
-- **To activate:**
-  1. Rename the job key + display name in `.github/workflows/ci.yml`.
-  2. Update the corresponding test in `scripts/test-ci-config.test.ts` to look for the new key.
-- **Estimated effort:** XS (~10 min)
-- **Reversal pointer:** None.
-
 ### DEBT-008 — Offline queueing for pronunciation attempts
 - **Date deferred:** 2026-05-01
 - **Date resolved:** 2026-05-01 (post-launch maintenance pass)
@@ -164,6 +142,18 @@ Format per entry:
 ---
 
 ## Resolved
+
+### DEBT-011 — Manual rollback runbook in deployment-landmines.md
+- **Date deferred:** 2026-05-05
+- **Date resolved:** 2026-05-05
+- **Originating phase / request:** Phase 8 audit (`audits/bughunt-phase-8.md` Warning-2)
+- **Resolution:** New § "Auto-deploy rollback recovery" in `references/deployment-landmines.md` documents the manual recovery sequence when `deploy.yml`'s automatic `vercel rollback` step fails: smoke locally to confirm breakage, `vercel ls --prod` for known-good, `vercel redeploy <url> --prod`, resmoke. Includes the path for regenerating + re-setting `VERCEL_TOKEN` from 1Password. Forward-fix migration note links back to the existing forward-only rule.
+
+### DEBT-010 — Rename ci.yml `production-smoke` job for timing clarity
+- **Date deferred:** 2026-05-05
+- **Date resolved:** 2026-05-05
+- **Originating phase / request:** Phase 8 audit (`audits/bughunt-phase-8.md` Warning-1)
+- **Resolution:** Job renamed to `live-smoke` in `.github/workflows/ci.yml`; `scripts/test-ci-config.test.ts` updated to assert the new key; comment block in ci.yml clarifies the timing semantics ("validates the deploy that is live NOW, before any new artifact ships from the deploy.yml pipeline triggered by this run").
 
 ### DEBT-009 — Author post-deploy smoke script
 - **Date deferred:** 2026-05-01

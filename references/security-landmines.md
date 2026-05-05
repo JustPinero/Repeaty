@@ -60,6 +60,8 @@ Input validation, injection prevention, RLS, and prompt-injection patterns.
 
 - **CORS on Edge Functions.** Supabase Edge Functions accept requests from any origin by default. We're fine for now (browser is the only legitimate caller and JWT auth gates everything), but tighten before publishing the API to third parties.
 
+- **Error-log scrubbing (Phase 8).** Errors logged via `apps/web/src/lib/error-log.ts:logClientError` are scrubbed before insert: `sk-` and `sk-ant-` patterns are replaced with `<scrubbed>` in `message`/`stack` strings, and field names matching `/(password|token|jwt|api[_-]?key|secret)/i` are dropped from `extra`. New error-logging paths should route through this helper rather than calling `supabase.from('client_error_log').insert(...)` directly. The 5/60s in-memory rate limit also defends against a self-amplifying error loop. PII inside stack frames (function arguments) is not stripped — out of scope for v1; revisit if errors start carrying user input.
+
 ## Required helpers (`packages/shared/src/validators.ts`)
 
 ```ts

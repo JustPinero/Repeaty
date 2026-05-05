@@ -72,6 +72,20 @@ Stack-specific gotchas. Read before every deploy. `/pre-deploy` enforces.
 
 - **Git secrets check.** Pre-commit hook scans staged changes for `sk-`, `sk-ant-`, `ghp_`, `AKIA` patterns. See `scripts/hooks/pre-commit-secret-check.sh`.
 
+## Auto-deploy rollback recovery
+
+Phase 8.2 wired `.github/workflows/deploy.yml` to call `vercel rollback` automatically when the post-deploy smoke fails. **What happens when the rollback step itself fails** (Vercel auth expired mid-run, transient network blip, or `vercel rollback` returns non-zero for some other reason)?
+
+The workflow exits non-zero, GitHub sends a failure email, and production stays on the broken artifact. Manual recovery, in this order:
+
+1. **Confirm the breakage** — `pnpm smoke` from your laptop. If the smoke fails locally too, the bad deploy is live.
+2. **Pick a known-good deployment** — `vercel ls --prod` lists recent prod deploys with status. The most recent `Ready` row before today's bad row is the rollback target.
+3. **Promote the previous deploy** — `vercel redeploy <previous-deployment-url> --prod --token=<your-PAT>`. (`vercel rollback` from the CLI works too if your local `vercel whoami` is healthy.)
+4. **Resmoke** — `pnpm smoke` to confirm the previous artifact is back in place.
+5. **If the auth itself is broken** — regenerate the Vercel token at https://vercel.com/account/tokens, save to 1Password as `repeaty-vercel-api` (field `credential`), then `gh secret set VERCEL_TOKEN --body "$(op item get repeaty-vercel-api --field credential --reveal)"`. The next push to `main` re-arms auto-deploy.
+
+Migrations are forward-only (see "Supabase" section above). If a bad migration shipped *and* smoke caught it: the Vercel rollback restores the JS that didn't expect that schema, but the schema is still applied. Author a forward-fix migration (`NNNN_revert_<thing>.sql`) and ship it in a new push.
+
 ## What we're NOT doing (so don't waste time on these)
 
 - We're **not** on Railway → ignore Railway-specific hints (trust proxy, healthcheck timeout, project tokens).

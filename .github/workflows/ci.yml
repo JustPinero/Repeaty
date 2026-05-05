@@ -73,13 +73,15 @@ jobs:
             deno test --allow-env --allow-net --allow-read "${tests[@]}"
           fi
 
-  # ─── Production smoke (post-push to main) ──────────────────────────────────
-  # Runs scripts/post-deploy-smoke.sh against the live deployment after every
-  # push to main. No `needs:` — runs in parallel with validate so a smoke
-  # regression surfaces in the same minute as a code regression. See
-  # `requests/phase-8-operations/8.1-ci-smoke-gate.md`.
-  production-smoke:
-    name: production smoke (post-push to main)
+  # ─── Live smoke (post-push to main) ─────────────────────────────────────────
+  # Runs scripts/post-deploy-smoke.sh against the *currently-live* deployment
+  # after every push to main. Note: this validates the deploy that is live
+  # NOW, before any new artifact ships from the deploy.yml pipeline triggered
+  # by this run. Post-deploy smoke against the new artifact lives inside
+  # deploy.yml's own steps. No `needs:` — runs in parallel with validate.
+  # See `requests/phase-8-operations/8.1-ci-smoke-gate.md`.
+  live-smoke:
+    name: live smoke (post-push to main)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
